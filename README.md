@@ -32,10 +32,13 @@ Copy `.env.local.example` to `.env.local` and fill in:
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 ANTHROPIC_API_KEY=
+ANTHROPIC_MODEL=
 TWILIO_ACCOUNT_SID=
 TWILIO_AUTH_TOKEN=
 TWILIO_FROM_NUMBER=
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
+AMADEUS_CLIENT_ID=
+AMADEUS_CLIENT_SECRET=
 ```
 
 - `ANTHROPIC_API_KEY` powers every AI feature (itinerary/restaurant suggestions, packing list, budget check,
@@ -43,6 +46,9 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 - Twilio vars are optional — if unset, `sendSms` logs a warning and no-ops instead of throwing, so the rest of
   the app works fine without SMS configured. Get these from the [Twilio Console](https://console.twilio.com):
   an Account SID, an Auth Token, and a phone number capable of sending SMS.
+- `AMADEUS_CLIENT_ID` / `AMADEUS_CLIENT_SECRET` are optional — they power live flight search against Amadeus's
+  Self-Service test API. If unset, flight search returns a 503 explaining it isn't configured yet; manual flight
+  entry still works. Get test credentials from the [Amadeus for Developers](https://developers.amadeus.com/) portal.
 
 ## 3. Run it
 
@@ -82,6 +88,21 @@ member joining).
 
 ## Deploying
 
+### Vercel
+
 Push to a Git repo and import it in Vercel, or run `vercel`. Add the same environment variables from step 2 in
 the Vercel project settings. No other configuration is needed — there's no build step beyond the standard
 `next build`.
+
+### Railway
+
+Railway builds this with Nixpacks and just needs the standard `build`/`start` scripts, which are already in
+`package.json` — no Dockerfile or `railway.json` required.
+
+1. Create a new Railway service from this repo.
+2. In the service's **Variables** tab, add every variable from step 2 (`NEXT_PUBLIC_SUPABASE_URL`,
+   `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `ANTHROPIC_API_KEY`, Twilio vars, etc). Set `NEXT_PUBLIC_SITE_URL` to the
+   Railway-assigned domain (or your custom domain) once it's known.
+3. Railway sets `PORT` automatically and `next start` reads it (binding to `0.0.0.0`) with no extra config.
+4. `package.json` pins `engines.node` to `>=20.9.0` (Next.js 16's minimum) and an `.nvmrc` targets Node 22, so
+   Nixpacks picks a compatible Node version automatically.
