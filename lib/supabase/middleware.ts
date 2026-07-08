@@ -32,6 +32,10 @@ export async function updateSession(request: NextRequest) {
   const isPublic = PUBLIC_PATHS.some((p) => path === p || path.startsWith(`${p}/`)) || path === "/";
 
   if (!user && !isPublic) {
+    // fetch() callers need a parseable 401, not a redirect to the login page's HTML
+    if (path.startsWith("/api/")) {
+      return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+    }
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.search = "";
