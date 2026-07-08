@@ -1,10 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ExternalLink, Heart, Trash2 } from "lucide-react";
+import { Heart, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AvatarStack } from "@/components/ui/avatar";
+import { LinkPreview } from "@/components/ui/link-preview";
 import type { Restaurant } from "@/lib/types/trip";
 
 export function FoodCard({
@@ -54,16 +55,7 @@ export function FoodCard({
 
       {restaurant.notes && <p className="text-sm text-ink-soft">{restaurant.notes}</p>}
 
-      {restaurant.url && (
-        <a
-          href={restaurant.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-xs font-medium text-green-dark hover:underline"
-        >
-          View <ExternalLink className="h-3 w-3" />
-        </a>
-      )}
+      {restaurant.url && <LinkPreview url={restaurant.url} variant="compact" />}
 
       <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
         <div className="flex items-center gap-2">

@@ -26,6 +26,8 @@ export function LodgingClient({
   initialOptions,
   initialVotes,
   memberLookup,
+  memberCount,
+  nights,
 }: {
   tripId: string;
   currentUserId: string;
@@ -33,6 +35,8 @@ export function LodgingClient({
   initialOptions: LodgingOption[];
   initialVotes: LodgingVoteRow[];
   memberLookup: Map<string, { name: string; color?: string }>;
+  memberCount: number;
+  nights: number | null;
 }) {
   const [options, setOptions] = useRealtimeList<LodgingOption>("lodging_options", tripId, initialOptions);
   const [votes, setVotes] = useRealtimeJoinList<LodgingVoteRow>(
@@ -116,6 +120,8 @@ export function LodgingClient({
         voters={optionVotes.map((v) => memberLookup.get(v.user_id) ?? { name: "Someone" })}
         authorName={memberLookup.get(option.created_by)?.name}
         canEdit={option.created_by === currentUserId || canEditOthers}
+        memberCount={memberCount}
+        nights={nights}
         onToggleVote={() => toggleVote(option.id)}
         onToggleBooked={() => toggleBooked(option)}
         onDelete={() => handleDelete(option.id)}

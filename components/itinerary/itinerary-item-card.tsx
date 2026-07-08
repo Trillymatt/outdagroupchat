@@ -2,10 +2,11 @@
 
 import { forwardRef, type CSSProperties } from "react";
 import { motion } from "framer-motion";
-import { ExternalLink, GripVertical, Heart, MapPin, Pencil, Trash2, UtensilsCrossed, Car, Bed, Sparkles, Compass } from "lucide-react";
+import { GripVertical, Heart, MapPin, Pencil, Trash2, UtensilsCrossed, Car, Bed, Sparkles, Compass } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarStack } from "@/components/ui/avatar";
+import { LinkPreview } from "@/components/ui/link-preview";
 import { cn } from "@/lib/utils/cn";
 import type { ItineraryItem } from "@/lib/types/trip";
 import type { ItineraryCategory } from "@/lib/supabase/database.types";
@@ -90,16 +91,7 @@ export const ItineraryItemCard = forwardRef<
             {item.location}
           </p>
         )}
-        {item.link && (
-          <a
-            href={item.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-xs font-medium text-green-dark hover:underline"
-          >
-            View <ExternalLink className="h-3 w-3" />
-          </a>
-        )}
+        {item.link && <LinkPreview url={item.link} variant="compact" />}
         <div className="flex flex-wrap items-center gap-2 pt-1">
           <Button size="sm" variant={votedByMe ? "primary" : "secondary"} onClick={onToggleVote}>
             <Heart className="h-3.5 w-3.5" />
