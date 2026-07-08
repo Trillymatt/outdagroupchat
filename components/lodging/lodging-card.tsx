@@ -1,12 +1,20 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ExternalLink, Heart, Trash2 } from "lucide-react";
+import { Heart, Trash2, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AvatarStack } from "@/components/ui/avatar";
+import { LinkPreview } from "@/components/ui/link-preview";
 import { cn } from "@/lib/utils/cn";
 import type { LodgingOption } from "@/lib/types/trip";
+
+function money(amount: number): string {
+  return `$${amount.toLocaleString("en-US", {
+    minimumFractionDigits: amount % 1 === 0 ? 0 : 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
 
 export function LodgingCard({
   option,
@@ -15,9 +23,12 @@ export function LodgingCard({
   voters,
   authorName,
   canEdit,
+  memberCount,
+  nights,
   onToggleVote,
   onToggleBooked,
   onDelete,
+  commentSlot,
 }: {
   option: LodgingOption;
   voteCount: number;
@@ -25,11 +36,17 @@ export function LodgingCard({
   voters: { name: string; color?: string }[];
   authorName?: string;
   canEdit: boolean;
+  memberCount: number;
+  nights: number | null;
   onToggleVote: () => void;
   onToggleBooked: () => void;
   onDelete: () => void;
+  commentSlot?: React.ReactNode;
 }) {
   const booked = option.status === "booked";
+  const pricePerNight = option.price_per_night;
+  const total = pricePerNight != null && nights != null ? pricePerNight * nights : null;
+  const splitAcross = memberCount > 1 ? memberCount : null;
 
   return (
     <motion.div
@@ -46,7 +63,12 @@ export function LodgingCard({
             <p className="font-medium text-ink">{option.name}</p>
             {booked && <Badge tone="success">Booked</Badge>}
           </div>
-          {option.price_per_night != null && <p className="text-sm text-ink-soft">${option.price_per_night}/night</p>}
+          {pricePerNight != null && (
+            <p className="text-sm text-ink-soft">
+              {money(pricePerNight)}/night
+              {splitAcross && <span className="text-ink-soft/70"> · ≈{money(pricePerNight / splitAcross)}/person</span>}
+            </p>
+          )}
         </div>
         {canEdit && (
           <button
@@ -60,18 +82,24 @@ export function LodgingCard({
         )}
       </div>
 
+      {total != null && (
+        <div className="flex items-center gap-1.5 rounded-xl bg-green/5 px-2.5 py-1.5 text-xs text-ink-soft">
+          <Users className="h-3.5 w-3.5 shrink-0 text-green-dark" />
+          <span>
+            {money(total)} for {nights} {nights === 1 ? "night" : "nights"}
+            {splitAcross && (
+              <>
+                {" "}
+                · <span className="font-semibold text-green-dark">{money(total / splitAcross)}/person</span> split {splitAcross} ways
+              </>
+            )}
+          </span>
+        </div>
+      )}
+
       {option.notes && <p className="text-sm text-ink-soft">{option.notes}</p>}
 
-      {option.url && (
-        <a
-          href={option.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-xs font-medium text-green-dark hover:underline"
-        >
-          View listing <ExternalLink className="h-3 w-3" />
-        </a>
-      )}
+      {option.url && <LinkPreview url={option.url} fallbackLabel="View listing" />}
 
       <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
         <div className="flex items-center gap-2">
@@ -90,6 +118,8 @@ export function LodgingCard({
           )}
         </div>
       </div>
+
+      {commentSlot}
     </motion.div>
   );
 }

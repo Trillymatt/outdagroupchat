@@ -1,17 +1,43 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import dynamic from "next/dynamic";
+import { CalendarPlus, LayoutGrid, Map as MapIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRealtimeList, useRealtimeJoinList } from "@/lib/hooks/use-realtime-list";
+import { useTripComments } from "@/lib/hooks/use-trip-comments";
+import { Button } from "@/components/ui/button";
+import { CommentThread } from "@/components/comments/comment-thread";
 import { ItineraryDayColumn } from "@/components/itinerary/itinerary-day-column";
 import type { ItineraryFormValues } from "@/components/itinerary/itinerary-item-form";
-import type { ItineraryItem } from "@/lib/types/trip";
+import type { ItineraryItem, TripComment } from "@/lib/types/trip";
+
+// Leaflet touches `window` at import time, so the map can only load in the browser
+const ItineraryMap = dynamic(() => import("@/components/itinerary/itinerary-map").then((m) => m.ItineraryMap), {
+  ssr: false,
+  loading: () => <div className="h-[420px] animate-pulse rounded-2xl border border-line bg-ink/[0.03]" />,
+});
 
 interface ItineraryVoteRow {
   itinerary_item_id: string;
   user_id: string;
   trip_id: string;
   created_at: string;
+}
+
+/** Geocode a free-text location and persist coords on the item. Fire-and-forget. */
+async function geocodeAndSave(itemId: string, location: string | null) {
+  if (!location) return;
+  try {
+    const res = await fetch(`/api/geocode?q=${encodeURIComponent(location)}`);
+    if (!res.ok) return;
+    const { lat, lng } = await res.json();
+    if (typeof lat !== "number" || typeof lng !== "number") return;
+    const supabase = createClient();
+    await supabase.from("itinerary_items").update({ lat, lng }).eq("id", itemId);
+  } catch {
+    // Geocoding is best-effort; the item just won't appear on the map
+  }
 }
 
 export function ItineraryClient({
@@ -22,6 +48,7 @@ export function ItineraryClient({
   initialVotes,
   days,
   authorLookup,
+  initialComments,
 }: {
   tripId: string;
   currentUserId: string;
@@ -30,6 +57,7 @@ export function ItineraryClient({
   initialVotes: ItineraryVoteRow[];
   days: string[];
   authorLookup: Map<string, { name: string; color?: string }>;
+  initialComments: TripComment[];
 }) {
   const [items, setItems] = useRealtimeList<ItineraryItem>("itinerary_items", tripId, initialItems);
   const [votes, setVotes] = useRealtimeJoinList<ItineraryVoteRow>(
@@ -38,6 +66,8 @@ export function ItineraryClient({
     initialVotes,
     (v) => `${v.itinerary_item_id}:${v.user_id}`,
   );
+  const [view, setView] = useState<"board" | "map">("board");
+  const { commentsFor, addComment, deleteComment } = useTripComments(tripId, currentUserId, initialComments);
 
   const votesByItem = useMemo(() => {
     const map = new Map<string, ItineraryVoteRow[]>();
@@ -83,11 +113,13 @@ export function ItineraryClient({
 
     if (!error && data) {
       setItems((prev) => (prev.some((i) => i.id === data.id) ? prev : [...prev, data]));
+      void geocodeAndSave(data.id, data.location);
     }
   }
 
   async function handleEdit(item: ItineraryItem, values: ItineraryFormValues) {
     const supabase = createClient();
+    const locationChanged = (values.location.trim() || null) !== item.location;
     const patch = {
       day: values.day,
       time: values.time || null,
@@ -97,10 +129,12 @@ export function ItineraryClient({
       category: values.category,
       cost: values.cost ? Number(values.cost) : null,
       link: values.link.trim() || null,
+      ...(locationChanged ? { lat: null, lng: null } : {}),
     };
 
     setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, ...patch } : i)));
     await supabase.from("itinerary_items").update(patch).eq("id", item.id);
+    if (locationChanged) void geocodeAndSave(item.id, patch.location);
   }
 
   async function toggleVote(itemId: string) {
@@ -129,23 +163,59 @@ export function ItineraryClient({
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-      {allDays.map((day) => (
-        <ItineraryDayColumn
-          key={day}
-          day={day}
-          items={itemsByDay.get(day) ?? []}
-          authorLookup={authorLookup}
-          currentUserId={currentUserId}
-          canEditOthers={canEditOthers}
-          votesByItem={votesByItem}
-          onToggleVote={toggleVote}
-          onAdd={(values) => handleAdd(day, values)}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onReorder={handleReorder}
-        />
-      ))}
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-1 rounded-xl border border-line bg-paper p-1">
+          <Button size="sm" variant={view === "board" ? "primary" : "ghost"} onClick={() => setView("board")}>
+            <LayoutGrid className="h-3.5 w-3.5" />
+            Board
+          </Button>
+          <Button size="sm" variant={view === "map" ? "primary" : "ghost"} onClick={() => setView("map")}>
+            <MapIcon className="h-3.5 w-3.5" />
+            Map
+          </Button>
+        </div>
+        <a
+          href={`/api/trips/${tripId}/calendar`}
+          download
+          className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-paper px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-green/40 hover:bg-green/5"
+        >
+          <CalendarPlus className="h-3.5 w-3.5" />
+          Add to calendar
+        </a>
+      </div>
+
+      {view === "map" ? (
+        <ItineraryMap items={items} days={allDays} />
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {allDays.map((day) => (
+            <ItineraryDayColumn
+              key={day}
+              day={day}
+              items={itemsByDay.get(day) ?? []}
+              authorLookup={authorLookup}
+              currentUserId={currentUserId}
+              canEditOthers={canEditOthers}
+              votesByItem={votesByItem}
+              onToggleVote={toggleVote}
+              onAdd={(values) => handleAdd(day, values)}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onReorder={handleReorder}
+              renderComments={(item) => (
+                <CommentThread
+                  comments={commentsFor("itinerary", item.id)}
+                  currentUserId={currentUserId}
+                  memberLookup={authorLookup}
+                  onAdd={(body) => addComment("itinerary", item.id, body)}
+                  onDelete={deleteComment}
+                />
+              )}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

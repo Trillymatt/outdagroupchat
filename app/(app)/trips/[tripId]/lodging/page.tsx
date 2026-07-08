@@ -15,10 +15,12 @@ export default async function LodgingPage({ params }: { params: Promise<{ tripId
   } = await supabase.auth.getUser();
   if (!user) notFound();
 
-  const [{ data: options }, { data: votes }, { data: members }] = await Promise.all([
+  const [{ data: options }, { data: votes }, { data: members }, { data: trip }, { data: comments }] = await Promise.all([
     supabase.from("lodging_options").select("*").eq("trip_id", tripId).order("created_at", { ascending: true }),
     supabase.from("lodging_votes").select("*").eq("trip_id", tripId),
     supabase.from("trip_members").select("user_id, display_name, role, can_edit_lodging, profiles(name, avatar_color)").eq("trip_id", tripId),
+    supabase.from("trips").select("start_date, end_date").eq("id", tripId).single(),
+    supabase.from("trip_comments").select("*").eq("trip_id", tripId).eq("entity_type", "lodging").order("created_at", { ascending: true }),
   ]);
 
   const memberLookup = new Map(
@@ -30,6 +32,11 @@ export default async function LodgingPage({ params }: { params: Promise<{ tripId
 
   const me = (members ?? []).find((m) => m.user_id === user.id);
   const canEditOthers = me?.role === "owner" || me?.can_edit_lodging === true;
+
+  const nights =
+    trip?.start_date && trip?.end_date
+      ? Math.max(1, Math.round((new Date(trip.end_date).getTime() - new Date(trip.start_date).getTime()) / 86_400_000))
+      : null;
 
   return (
     <div className="space-y-6">
@@ -44,6 +51,9 @@ export default async function LodgingPage({ params }: { params: Promise<{ tripId
         initialOptions={(options ?? []) as LodgingOption[]}
         initialVotes={votes ?? []}
         memberLookup={memberLookup}
+        memberCount={Math.max(1, (members ?? []).length)}
+        nights={nights}
+        initialComments={comments ?? []}
       />
     </div>
   );

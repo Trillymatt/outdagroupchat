@@ -5,12 +5,14 @@ import { AnimatePresence } from "framer-motion";
 import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRealtimeList, useRealtimeJoinList } from "@/lib/hooks/use-realtime-list";
+import { useTripComments } from "@/lib/hooks/use-trip-comments";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { CommentThread } from "@/components/comments/comment-thread";
 import { LodgingCard } from "@/components/lodging/lodging-card";
 import { LodgingForm, type LodgingFormValues } from "@/components/lodging/lodging-form";
-import type { LodgingOption } from "@/lib/types/trip";
+import type { LodgingOption, TripComment } from "@/lib/types/trip";
 
 interface LodgingVoteRow {
   lodging_option_id: string;
@@ -26,6 +28,9 @@ export function LodgingClient({
   initialOptions,
   initialVotes,
   memberLookup,
+  memberCount,
+  nights,
+  initialComments,
 }: {
   tripId: string;
   currentUserId: string;
@@ -33,6 +38,9 @@ export function LodgingClient({
   initialOptions: LodgingOption[];
   initialVotes: LodgingVoteRow[];
   memberLookup: Map<string, { name: string; color?: string }>;
+  memberCount: number;
+  nights: number | null;
+  initialComments: TripComment[];
 }) {
   const [options, setOptions] = useRealtimeList<LodgingOption>("lodging_options", tripId, initialOptions);
   const [votes, setVotes] = useRealtimeJoinList<LodgingVoteRow>(
@@ -42,6 +50,7 @@ export function LodgingClient({
     (v) => `${v.lodging_option_id}:${v.user_id}`,
   );
   const [adding, setAdding] = useState(false);
+  const { commentsFor, addComment, deleteComment } = useTripComments(tripId, currentUserId, initialComments);
 
   const votesByOption = useMemo(() => {
     const map = new Map<string, LodgingVoteRow[]>();
@@ -116,9 +125,20 @@ export function LodgingClient({
         voters={optionVotes.map((v) => memberLookup.get(v.user_id) ?? { name: "Someone" })}
         authorName={memberLookup.get(option.created_by)?.name}
         canEdit={option.created_by === currentUserId || canEditOthers}
+        memberCount={memberCount}
+        nights={nights}
         onToggleVote={() => toggleVote(option.id)}
         onToggleBooked={() => toggleBooked(option)}
         onDelete={() => handleDelete(option.id)}
+        commentSlot={
+          <CommentThread
+            comments={commentsFor("lodging", option.id)}
+            currentUserId={currentUserId}
+            memberLookup={memberLookup}
+            onAdd={(body) => addComment("lodging", option.id, body)}
+            onDelete={deleteComment}
+          />
+        }
       />
     );
   }

@@ -15,10 +15,11 @@ export default async function FoodPage({ params }: { params: Promise<{ tripId: s
   } = await supabase.auth.getUser();
   if (!user) notFound();
 
-  const [{ data: restaurants }, { data: votes }, { data: members }] = await Promise.all([
+  const [{ data: restaurants }, { data: votes }, { data: members }, { data: comments }] = await Promise.all([
     supabase.from("restaurants").select("*").eq("trip_id", tripId).order("created_at", { ascending: true }),
     supabase.from("restaurant_votes").select("*").eq("trip_id", tripId),
     supabase.from("trip_members").select("user_id, display_name, role, can_edit_food, profiles(name, avatar_color)").eq("trip_id", tripId),
+    supabase.from("trip_comments").select("*").eq("trip_id", tripId).eq("entity_type", "restaurant").order("created_at", { ascending: true }),
   ]);
 
   const memberLookup = new Map(
@@ -44,6 +45,7 @@ export default async function FoodPage({ params }: { params: Promise<{ tripId: s
         initialRestaurants={(restaurants ?? []) as Restaurant[]}
         initialVotes={votes ?? []}
         memberLookup={memberLookup}
+        initialComments={comments ?? []}
       />
     </div>
   );

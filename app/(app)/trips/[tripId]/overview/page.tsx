@@ -5,6 +5,7 @@ import { TripDetailsCard } from "@/components/trips/trip-details-card";
 import { DateProposals } from "@/components/trips/date-proposals";
 import { DateAvailability } from "@/components/trips/date-availability";
 import { InviteCodeCard } from "@/components/trips/invite-code-card";
+import { TripExportsCard } from "@/components/trips/trip-exports-card";
 import { MemberList, type MemberRow } from "@/components/trips/member-list";
 import { DangerZone } from "@/components/trips/danger-zone";
 import { computeAvailabilityWindow } from "@/lib/utils/availability-window";
@@ -73,6 +74,7 @@ export default async function TripOverviewPage({ params }: { params: Promise<{ t
       <div className="space-y-6">
         <InviteCodeCard code={trip.invite_code} />
         <MemberList tripId={tripId} initialMembers={members} currentUserId={user.id} isOwner={isOwner} />
+        <TripExportsCard tripId={tripId} />
       </div>
     </div>
   );

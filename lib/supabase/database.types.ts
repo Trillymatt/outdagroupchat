@@ -275,7 +275,9 @@ export type Database = {
           day: string
           description: string | null
           id: string
+          lat: number | null
           link: string | null
+          lng: number | null
           location: string | null
           position: number
           time: string | null
@@ -291,7 +293,9 @@ export type Database = {
           day: string
           description?: string | null
           id?: string
+          lat?: number | null
           link?: string | null
+          lng?: number | null
           location?: string | null
           position?: number
           time?: string | null
@@ -307,7 +311,9 @@ export type Database = {
           day?: string
           description?: string | null
           id?: string
+          lat?: number | null
           link?: string | null
+          lng?: number | null
           location?: string | null
           position?: number
           time?: string | null
@@ -674,6 +680,51 @@ export type Database = {
           },
         ]
       }
+      trip_comments: {
+        Row: {
+          body: string
+          created_at: string
+          created_by: string
+          entity_id: string
+          entity_type: CommentEntityType
+          id: string
+          trip_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          created_by: string
+          entity_id: string
+          entity_type: CommentEntityType
+          id?: string
+          trip_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          created_by?: string
+          entity_id?: string
+          entity_type?: CommentEntityType
+          id?: string
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_comments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_comments_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trip_date_availability: {
         Row: {
           created_at: string
@@ -789,6 +840,54 @@ export type Database = {
           {
             foreignKeyName: "trip_date_votes_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trip_documents: {
+        Row: {
+          content_type: string | null
+          created_at: string
+          file_path: string
+          id: string
+          name: string
+          size_bytes: number | null
+          trip_id: string
+          uploaded_by: string
+        }
+        Insert: {
+          content_type?: string | null
+          created_at?: string
+          file_path: string
+          id?: string
+          name: string
+          size_bytes?: number | null
+          trip_id: string
+          uploaded_by: string
+        }
+        Update: {
+          content_type?: string | null
+          created_at?: string
+          file_path?: string
+          id?: string
+          name?: string
+          size_bytes?: number | null
+          trip_id?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_documents_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1102,6 +1201,7 @@ export type CompositeTypes<
 // re-add after every `supabase gen types` regeneration.
 export type ItineraryCategory = "activity" | "food" | "transport" | "lodging" | "other";
 export type FlightStatus = "searching" | "booked" | "opted_out";
+export type CommentEntityType = "lodging" | "itinerary" | "restaurant";
 
 export const Constants = {
   graphql_public: {
