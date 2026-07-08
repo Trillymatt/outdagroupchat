@@ -44,9 +44,10 @@ export const ItineraryItemCard = forwardRef<
     dragHandleProps?: Record<string, unknown>;
     style?: CSSProperties;
     isDragging?: boolean;
+    commentSlot?: React.ReactNode;
   }
 >(function ItineraryItemCard(
-  { item, authorName, authorColor, voteCount, votedByMe, voters, canEdit, onToggleVote, onEdit, onDelete, dragHandleProps, style, isDragging },
+  { item, authorName, authorColor, voteCount, votedByMe, voters, canEdit, onToggleVote, onEdit, onDelete, dragHandleProps, style, isDragging, commentSlot },
   ref,
 ) {
   const meta = categoryMeta[item.category];
@@ -106,6 +107,7 @@ export const ItineraryItemCard = forwardRef<
           )}
           {item.cost != null && <span className="text-xs font-medium text-ink-soft">${item.cost.toFixed(2)}</span>}
         </div>
+        {commentSlot}
       </div>
 
       {canEdit && (

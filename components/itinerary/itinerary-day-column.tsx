@@ -24,6 +24,7 @@ function SortableItem({
   onToggleVote,
   onEdit,
   onDelete,
+  commentSlot,
 }: {
   item: ItineraryItem;
   authorName?: string;
@@ -35,6 +36,7 @@ function SortableItem({
   onToggleVote: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  commentSlot?: React.ReactNode;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
 
@@ -51,6 +53,7 @@ function SortableItem({
       onToggleVote={onToggleVote}
       onEdit={onEdit}
       onDelete={onDelete}
+      commentSlot={commentSlot}
       dragHandleProps={{ ...attributes, ...listeners }}
       isDragging={isDragging}
       style={{
@@ -74,6 +77,7 @@ export function ItineraryDayColumn({
   onAdd,
   onEdit,
   onDelete,
+  renderComments,
 }: {
   day: string;
   items: ItineraryItem[];
@@ -86,6 +90,7 @@ export function ItineraryDayColumn({
   onAdd: (values: ItineraryFormValues) => Promise<void>;
   onEdit: (item: ItineraryItem, values: ItineraryFormValues) => Promise<void>;
   onDelete: (item: ItineraryItem) => void;
+  renderComments?: (item: ItineraryItem) => React.ReactNode;
 }) {
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -178,6 +183,7 @@ export function ItineraryDayColumn({
                         onToggleVote={() => onToggleVote(item.id)}
                         onEdit={() => setEditingId(item.id)}
                         onDelete={() => onDelete(item)}
+                        commentSlot={renderComments?.(item)}
                       />
                     );
                   })()

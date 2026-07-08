@@ -10,6 +10,8 @@ export type Restaurant = Database["public"]["Tables"]["restaurants"]["Row"];
 export type FlightSuggestion = Database["public"]["Tables"]["flight_suggestions"]["Row"];
 export type AiSuggestion = Database["public"]["Tables"]["ai_suggestions"]["Row"];
 export type PackingItem = Database["public"]["Tables"]["packing_items"]["Row"];
+export type TripComment = Database["public"]["Tables"]["trip_comments"]["Row"];
+export type TripDocument = Database["public"]["Tables"]["trip_documents"]["Row"];
 
 export type TripMemberWithProfile = TripMember & {
   profile: Pick<Profile, "id" | "name" | "avatar_color">;

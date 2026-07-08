@@ -28,6 +28,7 @@ export function LodgingCard({
   onToggleVote,
   onToggleBooked,
   onDelete,
+  commentSlot,
 }: {
   option: LodgingOption;
   voteCount: number;
@@ -40,6 +41,7 @@ export function LodgingCard({
   onToggleVote: () => void;
   onToggleBooked: () => void;
   onDelete: () => void;
+  commentSlot?: React.ReactNode;
 }) {
   const booked = option.status === "booked";
   const pricePerNight = option.price_per_night;
@@ -116,6 +118,8 @@ export function LodgingCard({
           )}
         </div>
       </div>
+
+      {commentSlot}
     </motion.div>
   );
 }

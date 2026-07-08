@@ -17,6 +17,7 @@ export function FoodCard({
   canEdit,
   onToggleVote,
   onDelete,
+  commentSlot,
 }: {
   restaurant: Restaurant;
   voteCount: number;
@@ -26,6 +27,7 @@ export function FoodCard({
   canEdit: boolean;
   onToggleVote: () => void;
   onDelete: () => void;
+  commentSlot?: React.ReactNode;
 }) {
   return (
     <motion.div
@@ -67,6 +69,8 @@ export function FoodCard({
         </div>
         {authorName && <span className="text-xs text-ink-soft">added by {authorName}</span>}
       </div>
+
+      {commentSlot}
     </motion.div>
   );
 }
