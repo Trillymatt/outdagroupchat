@@ -5,7 +5,9 @@ import { InviteCodeCard } from "@/components/trips/invite-code-card";
 import { MemberList, type MemberRow } from "@/components/trips/member-list";
 import { PendingJoinRequests } from "@/components/trips/pending-join-requests";
 import { TripCompletionCard } from "@/components/trips/trip-completion-card";
+import { TripPreferencesCard } from "@/components/trips/trip-preferences-card";
 import { DangerZone } from "@/components/trips/danger-zone";
+import type { PreferenceAnswers } from "@/lib/utils/trip-preferences";
 
 export const metadata: Metadata = { title: "Settings — Tandem" };
 
@@ -48,11 +50,23 @@ export default async function TripSettingsPage({ params }: { params: Promise<{ t
     ]),
   );
 
+  const { data: myPreferences } = await supabase
+    .from("trip_preferences")
+    .select("answers")
+    .eq("trip_id", tripId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <InviteCodeCard code={trip.invite_code} />
       {isOwner && <PendingJoinRequests tripId={tripId} initialRequests={joinRequests ?? []} nameLookup={requesterLookup} />}
       <MemberList tripId={tripId} initialMembers={members} currentUserId={user.id} isOwner={isOwner} />
+      <TripPreferencesCard
+        tripId={tripId}
+        currentUserId={user.id}
+        initialAnswers={(myPreferences?.answers as PreferenceAnswers | undefined) ?? null}
+      />
       {isOwner && <TripCompletionCard tripId={tripId} initialCompleted={Boolean(trip.completed_at)} />}
       {isOwner && <DangerZone tripId={tripId} />}
     </div>

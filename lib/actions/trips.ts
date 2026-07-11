@@ -14,6 +14,7 @@ export async function createTripAction(_prevState: TripFormState, formData: Form
   const destinationLng = Number(formData.get("destination_lng") ?? "");
   const startDate = String(formData.get("start_date") ?? "").trim();
   const endDate = String(formData.get("end_date") ?? "").trim();
+  const preferenceAnswers = String(formData.get("preference_answers") ?? "");
 
   if (!name) return { error: "Trip name is required." };
 
@@ -37,6 +38,20 @@ export async function createTripAction(_prevState: TripFormState, formData: Form
       await supabase.from("trips").update({ cover_image: photo.url }).eq("id", data.id);
       void trackDownload(photo.downloadLocation);
     }
+  }
+
+  try {
+    const answers = JSON.parse(preferenceAnswers || "{}") as Record<string, string[]>;
+    if (Object.values(answers).some((v) => v.length > 0)) {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from("trip_preferences").insert({ trip_id: data.id, user_id: user.id, answers });
+      }
+    }
+  } catch {
+    // Preferences are optional — a malformed payload shouldn't block trip creation.
   }
 
   redirect(`/trips/${data.id}/overview`);
