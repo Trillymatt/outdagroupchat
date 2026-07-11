@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { AvatarStack } from "@/components/ui/avatar";
 import { LinkPreview } from "@/components/ui/link-preview";
 import { CommentThread } from "@/components/comments/comment-thread";
+import { FindFoodNearbyButton } from "@/components/trips/find-food-nearby-button";
 import { cn } from "@/lib/utils/cn";
 import type { LodgingOption } from "@/lib/types/trip";
 
@@ -131,6 +132,9 @@ export function LodgingCard({
           <MapPin className="h-3 w-3" />
           {option.location}
         </p>
+      )}
+      {option.lat != null && option.lng != null && (
+        <FindFoodNearbyButton tripId={tripId} lat={option.lat} lng={option.lng} label={option.name} />
       )}
 
       {option.url && <LinkPreview url={option.url} fallbackLabel="View listing" />}

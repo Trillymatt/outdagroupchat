@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { FoodClient } from "@/components/food/food-client";
-import type { Restaurant } from "@/lib/types/trip";
+import type { Restaurant, AiSuggestion } from "@/lib/types/trip";
 
 export const metadata: Metadata = { title: "Food — Tandem" };
 
@@ -15,10 +15,11 @@ export default async function FoodPage({ params }: { params: Promise<{ tripId: s
   } = await supabase.auth.getUser();
   if (!user) notFound();
 
-  const [{ data: restaurants }, { data: votes }, { data: members }] = await Promise.all([
+  const [{ data: restaurants }, { data: votes }, { data: members }, { data: suggestions }] = await Promise.all([
     supabase.from("restaurants").select("*").eq("trip_id", tripId).order("created_at", { ascending: true }),
     supabase.from("restaurant_votes").select("*").eq("trip_id", tripId),
     supabase.from("trip_members").select("user_id, display_name, role, can_edit_food, profiles(name, avatar_color)").eq("trip_id", tripId),
+    supabase.from("ai_suggestions").select("*").eq("trip_id", tripId).eq("type", "restaurant").eq("status", "suggested"),
   ]);
 
   const memberLookup = new Map(
@@ -44,6 +45,7 @@ export default async function FoodPage({ params }: { params: Promise<{ tripId: s
         initialRestaurants={(restaurants ?? []) as Restaurant[]}
         initialVotes={votes ?? []}
         memberLookup={memberLookup}
+        initialSuggestions={(suggestions ?? []) as AiSuggestion[]}
       />
     </div>
   );

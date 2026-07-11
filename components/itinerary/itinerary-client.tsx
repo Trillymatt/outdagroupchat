@@ -7,8 +7,9 @@ import { createClient } from "@/lib/supabase/client";
 import { useRealtimeList, useRealtimeJoinList } from "@/lib/hooks/use-realtime-list";
 import { Button } from "@/components/ui/button";
 import { ItineraryDayColumn } from "@/components/itinerary/itinerary-day-column";
+import { ItinerarySuggestionsSection } from "@/components/assistant/itinerary-suggestions-section";
 import type { ItineraryFormValues } from "@/components/itinerary/itinerary-item-form";
-import type { ItineraryItem, TripLeg } from "@/lib/types/trip";
+import type { ItineraryItem, TripLeg, AiSuggestion } from "@/lib/types/trip";
 import { formatDateRange } from "@/lib/utils/dates";
 
 // The Google Maps JS API touches `window` at load time, so the map can only load in the browser
@@ -48,6 +49,7 @@ export function ItineraryClient({
   days,
   authorLookup,
   initialLegs,
+  initialSuggestions,
 }: {
   tripId: string;
   currentUserId: string;
@@ -57,9 +59,11 @@ export function ItineraryClient({
   days: string[];
   authorLookup: Map<string, { name: string; color?: string }>;
   initialLegs: TripLeg[];
+  initialSuggestions: AiSuggestion[];
 }) {
   const [legs] = useRealtimeList<TripLeg>("trip_legs", tripId, initialLegs);
   const [items, setItems] = useRealtimeList<ItineraryItem>("itinerary_items", tripId, initialItems);
+  const [suggestions, setSuggestions] = useRealtimeList<AiSuggestion>("ai_suggestions", tripId, initialSuggestions);
   const [votes, setVotes] = useRealtimeJoinList<ItineraryVoteRow>(
     "itinerary_votes",
     tripId,
@@ -86,6 +90,17 @@ export function ItineraryClient({
   }, [items, days]);
 
   const allDays = useMemo(() => Array.from(itemsByDay.keys()).sort(), [itemsByDay]);
+
+  const itinerarySuggestions = useMemo(
+    () => suggestions.filter((s) => s.type === "itinerary" && s.status === "suggested"),
+    [suggestions],
+  );
+
+  async function dismissSuggestion(id: string) {
+    setSuggestions((prev) => prev.map((s) => (s.id === id ? { ...s, status: "dismissed" } : s)));
+    const supabase = createClient();
+    await supabase.from("ai_suggestions").update({ status: "dismissed" }).eq("id", id);
+  }
 
   // Groups days under whichever leg's date range contains them (legs are
   // trip metadata, not stored per-item — see 20260711010000_trip_legs.sql).
@@ -210,6 +225,13 @@ export function ItineraryClient({
         <ItineraryMap items={items} days={allDays} />
       ) : (
         <div className="space-y-8">
+          <ItinerarySuggestionsSection
+            tripId={tripId}
+            currentUserId={currentUserId}
+            suggestions={itinerarySuggestions}
+            setSuggestions={setSuggestions}
+            onDismiss={dismissSuggestion}
+          />
           {dayGroups.map((group) => (
             <div key={group.leg?.id ?? "unassigned"} className="space-y-3">
               {legs.length > 0 && (
