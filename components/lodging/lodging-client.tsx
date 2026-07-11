@@ -46,6 +46,7 @@ export function LodgingClient({
     (v) => `${v.lodging_option_id}:${v.user_id}`,
   );
   const [adding, setAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const votesByOption = useMemo(() => {
     const map = new Map<string, LodgingVoteRow[]>();
@@ -98,6 +99,22 @@ export function LodgingClient({
     }
   }
 
+  async function handleEdit(option: LodgingOption, values: LodgingFormValues) {
+    const supabase = createClient();
+    const patch = {
+      name: values.name.trim(),
+      url: values.url.trim() || null,
+      price_per_night: values.price_per_night ? Number(values.price_per_night) : null,
+      notes: values.notes.trim() || null,
+      confirmation_number: values.confirmation_number.trim() || null,
+      booking_url: values.booking_url.trim() || null,
+      booking_notes: values.booking_notes.trim() || null,
+    };
+    setOptions((prev) => prev.map((o) => (o.id === option.id ? { ...o, ...patch } : o)));
+    await supabase.from("lodging_options").update(patch).eq("id", option.id);
+    setEditingId(null);
+  }
+
   async function toggleBooked(option: LodgingOption) {
     const supabase = createClient();
     const nextStatus = option.status === "booked" ? "proposed" : "booked";
@@ -114,6 +131,19 @@ export function LodgingClient({
 
   function renderCard(option: LodgingOption) {
     const optionVotes = votesByOption.get(option.id) ?? [];
+    const canEdit = option.created_by === currentUserId || canEditOthers;
+
+    if (editingId === option.id) {
+      return (
+        <LodgingForm
+          key={option.id}
+          initial={option}
+          onCancel={() => setEditingId(null)}
+          onSubmit={(values) => handleEdit(option, values)}
+        />
+      );
+    }
+
     return (
       <LodgingCard
         key={option.id}
@@ -125,11 +155,12 @@ export function LodgingClient({
         votedByMe={optionVotes.some((v) => v.user_id === currentUserId)}
         voters={optionVotes.map((v) => memberLookup.get(v.user_id) ?? { name: "Someone" })}
         authorName={memberLookup.get(option.created_by)?.name}
-        canEdit={option.created_by === currentUserId || canEditOthers}
+        canEdit={canEdit}
         memberCount={memberCount}
         nights={nights}
         onToggleVote={() => toggleVote(option.id)}
         onToggleBooked={() => toggleBooked(option)}
+        onEdit={() => setEditingId(option.id)}
         onDelete={() => handleDelete(option.id)}
       />
     );

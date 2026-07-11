@@ -4,10 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { TripDetailsCard } from "@/components/trips/trip-details-card";
 import { TripLegsCard } from "@/components/trips/trip-legs-card";
 import { DateAvailability } from "@/components/trips/date-availability";
-import { InviteCodeCard } from "@/components/trips/invite-code-card";
 import { TripExportsCard } from "@/components/trips/trip-exports-card";
-import { MemberList, type MemberRow } from "@/components/trips/member-list";
-import { DangerZone } from "@/components/trips/danger-zone";
+import type { MemberRow } from "@/components/trips/member-list";
 import { computeAvailabilityWindow } from "@/lib/utils/availability-window";
 
 export const metadata: Metadata = { title: "Overview — Tandem" };
@@ -24,7 +22,7 @@ export default async function TripOverviewPage({ params }: { params: Promise<{ t
   const { data: trip } = await supabase
     .from("trips")
     .select(
-      "id, name, destination, start_date, end_date, cover_image, invite_code, trip_members(user_id, display_name, role, can_edit_lodging, can_edit_food, can_edit_itinerary, can_edit_flights, profiles(name, avatar_color))",
+      "id, name, destination, start_date, end_date, cover_image, trip_members(user_id, display_name, role, can_edit_lodging, can_edit_food, can_edit_itinerary, can_edit_flights, profiles(name, avatar_color))",
     )
     .eq("id", tripId)
     .single();
@@ -65,12 +63,10 @@ export default async function TripOverviewPage({ params }: { params: Promise<{ t
           windowEnd={availabilityWindow.end}
           lockedStart={datesLocked ? trip.start_date : null}
           lockedEnd={datesLocked ? trip.end_date : null}
+          isOwner={isOwner}
         />
-        {isOwner && <DangerZone tripId={tripId} />}
       </div>
       <div className="space-y-6">
-        <InviteCodeCard code={trip.invite_code} />
-        <MemberList tripId={tripId} initialMembers={members} currentUserId={user.id} isOwner={isOwner} />
         <TripExportsCard tripId={tripId} />
       </div>
     </div>

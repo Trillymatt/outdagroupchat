@@ -17,6 +17,7 @@ export function TripTabsNav({ tripId }: { tripId: string }) {
     { key: "documents", label: "Documents", href: `${base}/documents` },
     { key: "expenses", label: "Expenses", href: `${base}/expenses` },
     { key: "assistant", label: "Assistant", href: `${base}/assistant` },
+    { key: "settings", label: "Settings", href: `${base}/settings` },
   ];
 
   const active = items.find((item) => pathname?.startsWith(item.href))?.key ?? "overview";

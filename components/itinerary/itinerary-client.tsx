@@ -213,7 +213,7 @@ export function ItineraryClient({
                   {group.leg ? `${group.leg.city} · ${formatDateRange(group.leg.start_date, group.leg.end_date)}` : "Other days"}
                 </h3>
               )}
-              <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+              <div className="grid items-start gap-6 md:grid-cols-2 xl:grid-cols-3">
                 {group.days.map((day) => (
                   <ItineraryDayColumn
                     key={day}

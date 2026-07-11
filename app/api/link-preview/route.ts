@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { isBlockedHostname } from "@/lib/utils/url-safety";
 
 export const maxDuration = 15;
 
@@ -16,23 +17,6 @@ const CACHE_TTL_MS = 60 * 60 * 1000;
 const MAX_CACHE_ENTRIES = 500;
 const MAX_HTML_BYTES = 512 * 1024;
 const FETCH_TIMEOUT_MS = 8000;
-
-function isBlockedHostname(hostname: string): boolean {
-  const host = hostname.toLowerCase();
-  if (host === "localhost" || host.endsWith(".localhost") || host.endsWith(".local") || host.endsWith(".internal")) {
-    return true;
-  }
-  // IPv6 literals — not worth the parsing risk, real link previews are for public hostnames
-  if (host.includes(":") || host.startsWith("[")) return true;
-  const ipv4 = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
-  if (ipv4) {
-    const [a, b] = [Number(ipv4[1]), Number(ipv4[2])];
-    if (a === 0 || a === 10 || a === 127 || a === 169 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168)) {
-      return true;
-    }
-  }
-  return false;
-}
 
 function decodeEntities(text: string): string {
   return text
@@ -114,7 +98,9 @@ async function fetchPreview(target: URL): Promise<LinkPreviewData | null> {
       url: target.href,
       title,
       description,
-      image,
+      // Proxied instead of hotlinked — many listing sites (Airbnb/Vrbo/Cloudflare-fronted)
+      // 403 cross-origin image requests from the browser even though this server-side fetch succeeded.
+      image: image ? `/api/link-preview/image?url=${encodeURIComponent(image)}` : null,
       siteName: meta.get("og:site_name") ?? null,
     };
   } catch {

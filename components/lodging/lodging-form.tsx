@@ -6,6 +6,7 @@ import { ChevronDown } from "lucide-react";
 import { Input, Textarea, Label, FieldError } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils/cn";
+import type { LodgingOption } from "@/lib/types/trip";
 
 export interface LodgingFormValues {
   name: string;
@@ -17,25 +18,31 @@ export interface LodgingFormValues {
   booking_notes: string;
 }
 
+function toFormValues(option?: LodgingOption): LodgingFormValues {
+  return {
+    name: option?.name ?? "",
+    url: option?.url ?? "",
+    price_per_night: option?.price_per_night != null ? String(option.price_per_night) : "",
+    notes: option?.notes ?? "",
+    confirmation_number: option?.confirmation_number ?? "",
+    booking_url: option?.booking_url ?? "",
+    booking_notes: option?.booking_notes ?? "",
+  };
+}
+
 export function LodgingForm({
+  initial,
   onCancel,
   onSubmit,
 }: {
+  initial?: LodgingOption;
   onCancel: () => void;
   onSubmit: (values: LodgingFormValues) => Promise<void>;
 }) {
-  const [values, setValues] = useState<LodgingFormValues>({
-    name: "",
-    url: "",
-    price_per_night: "",
-    notes: "",
-    confirmation_number: "",
-    booking_url: "",
-    booking_notes: "",
-  });
+  const [values, setValues] = useState<LodgingFormValues>(() => toFormValues(initial));
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
-  const [showBooking, setShowBooking] = useState(false);
+  const [showBooking, setShowBooking] = useState(Boolean(initial?.confirmation_number || initial?.booking_url || initial?.booking_notes));
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -150,7 +157,7 @@ export function LodgingForm({
           Cancel
         </Button>
         <Button type="submit" size="sm" disabled={saving}>
-          Propose
+          {initial ? "Save changes" : "Propose"}
         </Button>
       </div>
     </motion.form>
