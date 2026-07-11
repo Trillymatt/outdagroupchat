@@ -3,6 +3,7 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
+import { MapPin } from "lucide-react";
 import { AiSectionCard } from "./ai-section-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +13,7 @@ interface RestaurantSuggestionContent {
   name: string;
   cuisine: string;
   notes: string;
+  nearLabel?: string | null;
 }
 
 export function RestaurantSuggestionsSection({
@@ -90,9 +92,15 @@ export function RestaurantSuggestionsSection({
               exit={{ opacity: 0, y: -8 }}
               className="rounded-2xl border border-line bg-paper p-4"
             >
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <p className="font-medium text-ink">{content.name}</p>
                 <Badge tone="green">{content.cuisine}</Badge>
+                {content.nearLabel && (
+                  <span className="flex items-center gap-1 text-xs text-ink-soft">
+                    <MapPin className="h-3 w-3" />
+                    near {content.nearLabel}
+                  </span>
+                )}
               </div>
               <p className="mt-1 text-sm text-ink-soft">{content.notes}</p>
               <div className="mt-3 flex gap-2">

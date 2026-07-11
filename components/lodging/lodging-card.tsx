@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Check, Copy, ExternalLink, Heart, Trash2, Users } from "lucide-react";
+import { Check, Copy, ExternalLink, Heart, MapPin, Pencil, Trash2, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AvatarStack } from "@/components/ui/avatar";
 import { LinkPreview } from "@/components/ui/link-preview";
 import { CommentThread } from "@/components/comments/comment-thread";
+import { FindFoodNearbyButton } from "@/components/trips/find-food-nearby-button";
 import { cn } from "@/lib/utils/cn";
 import type { LodgingOption } from "@/lib/types/trip";
 
@@ -32,6 +33,7 @@ export function LodgingCard({
   nights,
   onToggleVote,
   onToggleBooked,
+  onEdit,
   onDelete,
 }: {
   option: LodgingOption;
@@ -47,6 +49,7 @@ export function LodgingCard({
   nights: number | null;
   onToggleVote: () => void;
   onToggleBooked: () => void;
+  onEdit: () => void;
   onDelete: () => void;
 }) {
   const booked = option.status === "booked";
@@ -86,14 +89,24 @@ export function LodgingCard({
           )}
         </div>
         {canEdit && (
-          <button
-            type="button"
-            onClick={onDelete}
-            className="shrink-0 rounded-lg p-1 text-ink-soft/40 opacity-0 transition-opacity hover:bg-ink/5 hover:text-danger group-hover:opacity-100"
-            aria-label="Remove proposal"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
+          <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+            <button
+              type="button"
+              onClick={onEdit}
+              className="rounded-lg p-1 text-ink-soft/40 hover:bg-ink/5 hover:text-ink"
+              aria-label="Edit proposal"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={onDelete}
+              className="rounded-lg p-1 text-ink-soft/40 hover:bg-ink/5 hover:text-danger"
+              aria-label="Remove proposal"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
         )}
       </div>
 
@@ -113,6 +126,16 @@ export function LodgingCard({
       )}
 
       {option.notes && <p className="text-sm text-ink-soft">{option.notes}</p>}
+
+      {option.location && (
+        <p className="flex items-center gap-1 text-xs text-ink-soft">
+          <MapPin className="h-3 w-3" />
+          {option.location}
+        </p>
+      )}
+      {option.lat != null && option.lng != null && (
+        <FindFoodNearbyButton tripId={tripId} lat={option.lat} lng={option.lng} label={option.name} />
+      )}
 
       {option.url && <LinkPreview url={option.url} fallbackLabel="View listing" />}
 

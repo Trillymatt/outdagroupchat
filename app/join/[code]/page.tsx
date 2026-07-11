@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { joinTripByCode } from "@/lib/actions/trips";
+import { requestToJoinByCode } from "@/lib/actions/trips";
 import { Card } from "@/components/ui/card";
 import { LogoMark } from "@/components/ui/logo";
 
@@ -23,8 +23,8 @@ export default async function JoinByLinkPage({ params }: { params: Promise<{ cod
     redirect(`/login?redirect=${encodeURIComponent(`/join/${inviteCode}`)}`);
   }
 
-  const result = await joinTripByCode(inviteCode);
-  if ("tripId" in result) {
+  const result = await requestToJoinByCode(inviteCode);
+  if ("alreadyMember" in result && result.alreadyMember) {
     redirect(`/trips/${result.tripId}/overview`);
   }
 
@@ -34,23 +34,38 @@ export default async function JoinByLinkPage({ params }: { params: Promise<{ cod
         <LogoMark size={32} />
         Tandem
       </div>
-      <Card className="mt-8 w-full max-w-sm space-y-3 text-center">
-        <p className="font-semibold text-ink">This invite link didn&apos;t work</p>
-        <p className="text-sm text-ink-soft">
-          The code <span className="font-mono uppercase tracking-widest">{inviteCode}</span> doesn&apos;t match a trip.
-          It may have been mistyped, or the trip may no longer exist.
-        </p>
-        <p className="text-sm text-ink-soft">
-          <Link href="/trips/join" className="font-medium text-green-dark">
-            Enter an invite code manually
-          </Link>{" "}
-          or{" "}
-          <Link href="/dashboard" className="font-medium text-green-dark">
-            go to your dashboard
-          </Link>
-          .
-        </p>
-      </Card>
+      {"tripName" in result ? (
+        <Card className="mt-8 w-full max-w-sm space-y-3 text-center">
+          <p className="font-semibold text-ink">Request sent</p>
+          <p className="text-sm text-ink-soft">
+            You&apos;ll get access to <span className="font-medium text-ink">{result.tripName}</span> once the owner approves your
+            request.
+          </p>
+          <p className="text-sm text-ink-soft">
+            <Link href="/dashboard" className="font-medium text-green-dark">
+              Go to your dashboard
+            </Link>
+          </p>
+        </Card>
+      ) : (
+        <Card className="mt-8 w-full max-w-sm space-y-3 text-center">
+          <p className="font-semibold text-ink">This invite link didn&apos;t work</p>
+          <p className="text-sm text-ink-soft">
+            The code <span className="font-mono uppercase tracking-widest">{inviteCode}</span> doesn&apos;t match a trip.
+            It may have been mistyped, or the trip may no longer exist.
+          </p>
+          <p className="text-sm text-ink-soft">
+            <Link href="/trips/join" className="font-medium text-green-dark">
+              Enter an invite code manually
+            </Link>{" "}
+            or{" "}
+            <Link href="/dashboard" className="font-medium text-green-dark">
+              go to your dashboard
+            </Link>
+            .
+          </p>
+        </Card>
+      )}
     </div>
   );
 }

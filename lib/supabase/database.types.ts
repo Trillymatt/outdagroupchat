@@ -527,6 +527,9 @@ export type Database = {
           created_at: string
           created_by: string
           id: string
+          lat: number | null
+          lng: number | null
+          location: string | null
           name: string
           notes: string | null
           price_per_night: number | null
@@ -542,6 +545,9 @@ export type Database = {
           created_at?: string
           created_by: string
           id?: string
+          lat?: number | null
+          lng?: number | null
+          location?: string | null
           name: string
           notes?: string | null
           price_per_night?: number | null
@@ -557,6 +563,9 @@ export type Database = {
           created_at?: string
           created_by?: string
           id?: string
+          lat?: number | null
+          lng?: number | null
+          location?: string | null
           name?: string
           notes?: string | null
           price_per_night?: number | null
@@ -706,6 +715,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_color: string
+          avatar_url: string | null
           created_at: string
           email: string
           id: string
@@ -716,6 +726,7 @@ export type Database = {
         }
         Insert: {
           avatar_color?: string
+          avatar_url?: string | null
           created_at?: string
           email: string
           id: string
@@ -726,6 +737,7 @@ export type Database = {
         }
         Update: {
           avatar_color?: string
+          avatar_url?: string | null
           created_at?: string
           email?: string
           id?: string
@@ -911,6 +923,58 @@ export type Database = {
           },
         ]
       }
+      trip_join_requests: {
+        Row: {
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          requested_at: string
+          status: string
+          trip_id: string
+          user_id: string
+        }
+        Insert: {
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          requested_at?: string
+          status?: string
+          trip_id: string
+          user_id: string
+        }
+        Update: {
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          requested_at?: string
+          status?: string
+          trip_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_join_requests_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_join_requests_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_join_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trip_legs: {
         Row: {
           city: string
@@ -1010,13 +1074,55 @@ export type Database = {
           },
         ]
       }
+      trip_preferences: {
+        Row: {
+          answers: Json
+          id: string
+          trip_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          answers?: Json
+          id?: string
+          trip_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          id?: string
+          trip_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_preferences_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trips: {
         Row: {
+          completed_at: string | null
           cover_image: string | null
           created_at: string
           created_by: string
           dates_locked: boolean
           destination: string | null
+          destination_lat: number | null
+          destination_lng: number | null
           end_date: string | null
           id: string
           invite_code: string
@@ -1025,11 +1131,14 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          completed_at?: string | null
           cover_image?: string | null
           created_at?: string
           created_by: string
           dates_locked?: boolean
           destination?: string | null
+          destination_lat?: number | null
+          destination_lng?: number | null
           end_date?: string | null
           id?: string
           invite_code?: string
@@ -1038,11 +1147,14 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          completed_at?: string | null
           cover_image?: string | null
           created_at?: string
           created_by?: string
           dates_locked?: boolean
           destination?: string | null
+          destination_lat?: number | null
+          destination_lng?: number | null
           end_date?: string | null
           id?: string
           invite_code?: string
@@ -1065,6 +1177,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_join_request: {
+        Args: {
+          p_can_edit_flights?: boolean
+          p_can_edit_food?: boolean
+          p_can_edit_itinerary?: boolean
+          p_can_edit_lodging?: boolean
+          p_request_id: string
+        }
+        Returns: undefined
+      }
       can_edit_category: {
         Args: { category: string; target_trip_id: string }
         Returns: boolean
@@ -1077,11 +1199,14 @@ export type Database = {
           p_start_date?: string
         }
         Returns: {
+          completed_at: string | null
           cover_image: string | null
           created_at: string
           created_by: string
           dates_locked: boolean
           destination: string | null
+          destination_lat: number | null
+          destination_lng: number | null
           end_date: string | null
           id: string
           invite_code: string
@@ -1097,17 +1222,41 @@ export type Database = {
         }
       }
       delete_trip: { Args: { p_trip_id: string }; Returns: undefined }
+      deny_join_request: { Args: { p_request_id: string }; Returns: undefined }
       gen_invite_code: { Args: never; Returns: string }
+      get_public_completed_trips: {
+        Args: { p_user_id: string }
+        Returns: {
+          completed_at: string
+          cover_image: string
+          destination: string
+          end_date: string
+          id: string
+          name: string
+          start_date: string
+        }[]
+      }
+      get_public_profile: {
+        Args: { p_user_id: string }
+        Returns: {
+          avatar_color: string
+          avatar_url: string
+          name: string
+        }[]
+      }
       is_trip_member: { Args: { target_trip_id: string }; Returns: boolean }
       is_trip_owner: { Args: { target_trip_id: string }; Returns: boolean }
       join_trip_by_code: {
         Args: { p_invite_code: string }
         Returns: {
+          completed_at: string | null
           cover_image: string | null
           created_at: string
           created_by: string
           dates_locked: boolean
           destination: string | null
+          destination_lat: number | null
+          destination_lng: number | null
           end_date: string | null
           id: string
           invite_code: string
@@ -1123,8 +1272,25 @@ export type Database = {
         }
       }
       leave_trip: { Args: { p_trip_id: string }; Returns: undefined }
+      log_activity: {
+        Args: { p_event_type: string; p_summary: string; p_trip_id: string }
+        Returns: undefined
+      }
       remove_trip_member: {
         Args: { p_trip_id: string; p_user_id: string }
+        Returns: undefined
+      }
+      request_to_join: {
+        Args: { p_invite_code: string }
+        Returns: {
+          out_already_member: boolean
+          out_status: string
+          out_trip_id: string
+          out_trip_name: string
+        }[]
+      }
+      set_trip_completed: {
+        Args: { p_completed: boolean; p_trip_id: string }
         Returns: undefined
       }
       set_trip_member_permission: {
@@ -1275,8 +1441,8 @@ export const Constants = {
   },
 } as const
 
-export type ItineraryCategory = "activity" | "food" | "transport" | "lodging" | "other";
-export type FlightStatus = "searching" | "booked" | "opted_out";
-export type ExpenseCategory = "lodging" | "food" | "transport" | "activity" | "other";
-export type CommentTargetType = "lodging" | "restaurant" | "itinerary" | "flight_suggestion";
 
+export type ItineraryCategory = "activity" | "food" | "transport" | "lodging" | "other"
+export type FlightStatus = "searching" | "booked" | "opted_out"
+export type ExpenseCategory = "lodging" | "food" | "transport" | "activity" | "other"
+export type CommentTargetType = "lodging" | "restaurant" | "itinerary" | "flight_suggestion"

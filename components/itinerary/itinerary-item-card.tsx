@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarStack } from "@/components/ui/avatar";
 import { LinkPreview } from "@/components/ui/link-preview";
 import { CommentThread } from "@/components/comments/comment-thread";
+import { FindFoodNearbyButton } from "@/components/trips/find-food-nearby-button";
 import { cn } from "@/lib/utils/cn";
 import type { ItineraryItem } from "@/lib/types/trip";
 import type { ItineraryCategory } from "@/lib/supabase/database.types";
@@ -94,6 +95,9 @@ export const ItineraryItemCard = forwardRef<
             <MapPin className="h-3 w-3" />
             {item.location}
           </p>
+        )}
+        {item.lat != null && item.lng != null && (
+          <FindFoodNearbyButton tripId={tripId} lat={item.lat} lng={item.lng} label={item.title} />
         )}
         {item.link && <LinkPreview url={item.link} variant="compact" />}
         <div className="flex flex-wrap items-center gap-2 pt-1">

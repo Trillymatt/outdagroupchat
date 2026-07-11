@@ -5,37 +5,51 @@ import { motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import { Input, Textarea, Label, FieldError } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { PlaceAutocomplete } from "@/components/ui/place-autocomplete";
 import { cn } from "@/lib/utils/cn";
+import type { LodgingOption } from "@/lib/types/trip";
 
 export interface LodgingFormValues {
   name: string;
   url: string;
   price_per_night: string;
   notes: string;
+  location: string;
+  lat: number | null;
+  lng: number | null;
   confirmation_number: string;
   booking_url: string;
   booking_notes: string;
 }
 
+function toFormValues(option?: LodgingOption): LodgingFormValues {
+  return {
+    name: option?.name ?? "",
+    url: option?.url ?? "",
+    price_per_night: option?.price_per_night != null ? String(option.price_per_night) : "",
+    notes: option?.notes ?? "",
+    location: option?.location ?? "",
+    lat: option?.lat ?? null,
+    lng: option?.lng ?? null,
+    confirmation_number: option?.confirmation_number ?? "",
+    booking_url: option?.booking_url ?? "",
+    booking_notes: option?.booking_notes ?? "",
+  };
+}
+
 export function LodgingForm({
+  initial,
   onCancel,
   onSubmit,
 }: {
+  initial?: LodgingOption;
   onCancel: () => void;
   onSubmit: (values: LodgingFormValues) => Promise<void>;
 }) {
-  const [values, setValues] = useState<LodgingFormValues>({
-    name: "",
-    url: "",
-    price_per_night: "",
-    notes: "",
-    confirmation_number: "",
-    booking_url: "",
-    booking_notes: "",
-  });
+  const [values, setValues] = useState<LodgingFormValues>(() => toFormValues(initial));
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
-  const [showBooking, setShowBooking] = useState(false);
+  const [showBooking, setShowBooking] = useState(Boolean(initial?.confirmation_number || initial?.booking_url || initial?.booking_notes));
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -95,6 +109,16 @@ export function LodgingForm({
         />
       </div>
       <div>
+        <Label htmlFor="lodging-location">Location (optional)</Label>
+        <PlaceAutocomplete
+          id="lodging-location"
+          value={values.location}
+          onChange={(text) => setValues((v) => ({ ...v, location: text, lat: null, lng: null }))}
+          onPlaceSelect={(place) => setValues((v) => ({ ...v, location: place.description, lat: place.lat, lng: place.lng }))}
+          placeholder="Pin it on the map for nearby food suggestions"
+        />
+      </div>
+      <div>
         <Label htmlFor="lodging-notes">Notes</Label>
         <Textarea
           id="lodging-notes"
@@ -150,7 +174,7 @@ export function LodgingForm({
           Cancel
         </Button>
         <Button type="submit" size="sm" disabled={saving}>
-          Propose
+          {initial ? "Save changes" : "Propose"}
         </Button>
       </div>
     </motion.form>

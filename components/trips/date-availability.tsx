@@ -28,6 +28,7 @@ export function DateAvailability({
   windowEnd,
   lockedStart,
   lockedEnd,
+  isOwner,
 }: {
   tripId: string;
   currentUserId: string;
@@ -37,6 +38,7 @@ export function DateAvailability({
   windowEnd: string;
   lockedStart: string | null;
   lockedEnd: string | null;
+  isOwner: boolean;
 }) {
   const [availability, setAvailability] = useRealtimeJoinList<AvailabilityRow>(
     "trip_date_availability",
@@ -83,6 +85,39 @@ export function DateAvailability({
     await notifyOptedInMembers(tripId, `Dates are locked in: ${formatDateRange(window.start, window.end)}. Check Tandem for details.`);
   }
 
+  async function unlockDates() {
+    if (!confirm("Unlock these dates? The group will go back to voting on availability.")) return;
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("trips")
+      .update({ start_date: null, end_date: null, dates_locked: false })
+      .eq("id", tripId);
+    if (error) return;
+    setLocked(null);
+  }
+
+  if (locked) {
+    return (
+      <Card className="space-y-3">
+        <div>
+          <h2 className="font-semibold text-ink">Trip dates</h2>
+          <p className="text-sm text-ink-soft">These dates are locked in for the whole group.</p>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-success/40 bg-paper px-3.5 py-2.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge tone="success">Locked</Badge>
+            <p className="text-sm font-medium text-ink">{formatDateRange(locked.start, locked.end)}</p>
+          </div>
+          {isOwner && (
+            <Button size="sm" variant="secondary" onClick={() => startTransition(unlockDates)} disabled={pending}>
+              Unlock dates
+            </Button>
+          )}
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <Card className="space-y-3">
       <div>
@@ -90,28 +125,21 @@ export function DateAvailability({
         <p className="text-sm text-ink-soft">Mark the days you're free — the group can see where everyone overlaps.</p>
       </div>
 
-      {locked ? (
-        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-success/40 bg-paper px-3.5 py-2.5">
-          <Badge tone="success">Locked</Badge>
-          <p className="text-sm font-medium text-ink">{formatDateRange(locked.start, locked.end)}</p>
-        </div>
-      ) : (
-        bestWindow && (
-          <div
-            className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-line px-3.5 py-2.5"
-            style={{ backgroundColor: "rgba(31, 95, 66, 0.08)" }}
-          >
-            <div>
-              <p className="text-sm font-medium text-ink">Best window: {formatDateRange(bestWindow.start, bestWindow.end)}</p>
-              <p className="text-xs text-ink-soft">
-                {bestWindow.freeCount} of {members.length} people free
-              </p>
-            </div>
-            <Button size="sm" onClick={() => startTransition(() => lockDates(bestWindow))} disabled={pending}>
-              Lock these dates
-            </Button>
+      {bestWindow && (
+        <div
+          className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-line px-3.5 py-2.5"
+          style={{ backgroundColor: "rgba(31, 95, 66, 0.08)" }}
+        >
+          <div>
+            <p className="text-sm font-medium text-ink">Best window: {formatDateRange(bestWindow.start, bestWindow.end)}</p>
+            <p className="text-xs text-ink-soft">
+              {bestWindow.freeCount} of {members.length} people free
+            </p>
           </div>
-        )
+          <Button size="sm" onClick={() => startTransition(() => lockDates(bestWindow))} disabled={pending}>
+            Lock these dates
+          </Button>
+        </div>
       )}
 
       <div className="max-h-96 space-y-1.5 overflow-y-auto">

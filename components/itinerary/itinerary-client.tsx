@@ -7,11 +7,12 @@ import { createClient } from "@/lib/supabase/client";
 import { useRealtimeList, useRealtimeJoinList } from "@/lib/hooks/use-realtime-list";
 import { Button } from "@/components/ui/button";
 import { ItineraryDayColumn } from "@/components/itinerary/itinerary-day-column";
+import { ItinerarySuggestionsSection } from "@/components/assistant/itinerary-suggestions-section";
 import type { ItineraryFormValues } from "@/components/itinerary/itinerary-item-form";
-import type { ItineraryItem, TripLeg } from "@/lib/types/trip";
+import type { ItineraryItem, TripLeg, AiSuggestion } from "@/lib/types/trip";
 import { formatDateRange } from "@/lib/utils/dates";
 
-// Leaflet touches `window` at import time, so the map can only load in the browser
+// The Google Maps JS API touches `window` at load time, so the map can only load in the browser
 const ItineraryMap = dynamic(() => import("@/components/itinerary/itinerary-map").then((m) => m.ItineraryMap), {
   ssr: false,
   loading: () => <div className="h-[420px] animate-pulse rounded-2xl border border-line bg-ink/[0.03]" />,
@@ -48,6 +49,7 @@ export function ItineraryClient({
   days,
   authorLookup,
   initialLegs,
+  initialSuggestions,
 }: {
   tripId: string;
   currentUserId: string;
@@ -57,9 +59,11 @@ export function ItineraryClient({
   days: string[];
   authorLookup: Map<string, { name: string; color?: string }>;
   initialLegs: TripLeg[];
+  initialSuggestions: AiSuggestion[];
 }) {
   const [legs] = useRealtimeList<TripLeg>("trip_legs", tripId, initialLegs);
   const [items, setItems] = useRealtimeList<ItineraryItem>("itinerary_items", tripId, initialItems);
+  const [suggestions, setSuggestions] = useRealtimeList<AiSuggestion>("ai_suggestions", tripId, initialSuggestions);
   const [votes, setVotes] = useRealtimeJoinList<ItineraryVoteRow>(
     "itinerary_votes",
     tripId,
@@ -86,6 +90,17 @@ export function ItineraryClient({
   }, [items, days]);
 
   const allDays = useMemo(() => Array.from(itemsByDay.keys()).sort(), [itemsByDay]);
+
+  const itinerarySuggestions = useMemo(
+    () => suggestions.filter((s) => s.type === "itinerary" && s.status === "suggested"),
+    [suggestions],
+  );
+
+  async function dismissSuggestion(id: string) {
+    setSuggestions((prev) => prev.map((s) => (s.id === id ? { ...s, status: "dismissed" } : s)));
+    const supabase = createClient();
+    await supabase.from("ai_suggestions").update({ status: "dismissed" }).eq("id", id);
+  }
 
   // Groups days under whichever leg's date range contains them (legs are
   // trip metadata, not stored per-item — see 20260711010000_trip_legs.sql).
@@ -119,6 +134,8 @@ export function ItineraryClient({
         title: values.title.trim(),
         description: values.description.trim() || null,
         location: values.location.trim() || null,
+        lat: values.lat,
+        lng: values.lng,
         category: values.category,
         cost: values.cost ? Number(values.cost) : null,
         link: values.link.trim() || null,
@@ -130,7 +147,8 @@ export function ItineraryClient({
 
     if (!error && data) {
       setItems((prev) => (prev.some((i) => i.id === data.id) ? prev : [...prev, data]));
-      void geocodeAndSave(data.id, data.location);
+      // Places Autocomplete already resolved coordinates; only geocode free-text-only locations.
+      if (data.location && data.lat == null) void geocodeAndSave(data.id, data.location);
     }
   }
 
@@ -146,12 +164,13 @@ export function ItineraryClient({
       category: values.category,
       cost: values.cost ? Number(values.cost) : null,
       link: values.link.trim() || null,
-      ...(locationChanged ? { lat: null, lng: null } : {}),
+      lat: locationChanged ? values.lat : item.lat,
+      lng: locationChanged ? values.lng : item.lng,
     };
 
     setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, ...patch } : i)));
     await supabase.from("itinerary_items").update(patch).eq("id", item.id);
-    if (locationChanged) void geocodeAndSave(item.id, patch.location);
+    if (locationChanged && patch.location && patch.lat == null) void geocodeAndSave(item.id, patch.location);
   }
 
   async function toggleVote(itemId: string) {
@@ -206,6 +225,13 @@ export function ItineraryClient({
         <ItineraryMap items={items} days={allDays} />
       ) : (
         <div className="space-y-8">
+          <ItinerarySuggestionsSection
+            tripId={tripId}
+            currentUserId={currentUserId}
+            suggestions={itinerarySuggestions}
+            setSuggestions={setSuggestions}
+            onDismiss={dismissSuggestion}
+          />
           {dayGroups.map((group) => (
             <div key={group.leg?.id ?? "unassigned"} className="space-y-3">
               {legs.length > 0 && (
@@ -213,7 +239,7 @@ export function ItineraryClient({
                   {group.leg ? `${group.leg.city} · ${formatDateRange(group.leg.start_date, group.leg.end_date)}` : "Other days"}
                 </h3>
               )}
-              <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+              <div className="grid items-start gap-6 md:grid-cols-2 xl:grid-cols-3">
                 {group.days.map((day) => (
                   <ItineraryDayColumn
                     key={day}

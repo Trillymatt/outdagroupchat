@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FoodCard } from "@/components/food/food-card";
 import { FoodForm, type FoodFormValues } from "@/components/food/food-form";
-import type { Restaurant } from "@/lib/types/trip";
+import { RestaurantSuggestionsSection } from "@/components/assistant/restaurant-suggestions-section";
+import type { Restaurant, AiSuggestion } from "@/lib/types/trip";
 
 interface RestaurantVoteRow {
   restaurant_id: string;
@@ -26,6 +27,7 @@ export function FoodClient({
   initialRestaurants,
   initialVotes,
   memberLookup,
+  initialSuggestions,
 }: {
   tripId: string;
   currentUserId: string;
@@ -33,6 +35,7 @@ export function FoodClient({
   initialRestaurants: Restaurant[];
   initialVotes: RestaurantVoteRow[];
   memberLookup: Map<string, { name: string; color?: string }>;
+  initialSuggestions: AiSuggestion[];
 }) {
   const [restaurants, setRestaurants] = useRealtimeList<Restaurant>("restaurants", tripId, initialRestaurants);
   const [votes, setVotes] = useRealtimeJoinList<RestaurantVoteRow>(
@@ -41,7 +44,19 @@ export function FoodClient({
     initialVotes,
     (v) => `${v.restaurant_id}:${v.user_id}`,
   );
+  const [suggestions, setSuggestions] = useRealtimeList<AiSuggestion>("ai_suggestions", tripId, initialSuggestions);
   const [adding, setAdding] = useState(false);
+
+  const restaurantSuggestions = useMemo(
+    () => suggestions.filter((s) => s.type === "restaurant" && s.status === "suggested"),
+    [suggestions],
+  );
+
+  async function dismissSuggestion(id: string) {
+    setSuggestions((prev) => prev.map((s) => (s.id === id ? { ...s, status: "dismissed" } : s)));
+    const supabase = createClient();
+    await supabase.from("ai_suggestions").update({ status: "dismissed" }).eq("id", id);
+  }
 
   const votesByRestaurant = useMemo(() => {
     const map = new Map<string, RestaurantVoteRow[]>();
@@ -96,6 +111,13 @@ export function FoodClient({
 
   return (
     <div className="space-y-6">
+      <RestaurantSuggestionsSection
+        tripId={tripId}
+        currentUserId={currentUserId}
+        suggestions={restaurantSuggestions}
+        setSuggestions={setSuggestions}
+        onDismiss={dismissSuggestion}
+      />
       <Card className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold text-ink">Add a recommendation</h2>

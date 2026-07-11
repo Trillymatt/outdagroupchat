@@ -1,15 +1,20 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { createTripAction, type TripFormState } from "@/lib/actions/trips";
 import { Card } from "@/components/ui/card";
 import { Input, Label, FieldError } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { PlaceAutocomplete } from "@/components/ui/place-autocomplete";
+import { PreferenceQuestions } from "@/components/trips/preference-questions";
+import type { PreferenceAnswers } from "@/lib/utils/trip-preferences";
 
 const initialState: TripFormState = undefined;
 
 export function CreateTripForm() {
   const [state, formAction, pending] = useActionState(createTripAction, initialState);
+  const [destination, setDestination] = useState({ text: "", lat: null as number | null, lng: null as number | null });
+  const [answers, setAnswers] = useState<PreferenceAnswers>({});
 
   return (
     <Card className="max-w-lg space-y-4">
@@ -20,7 +25,16 @@ export function CreateTripForm() {
         </div>
         <div>
           <Label htmlFor="destination">Destination</Label>
-          <Input id="destination" name="destination" placeholder="Lisbon, Portugal" />
+          <PlaceAutocomplete
+            id="destination"
+            name="destination"
+            value={destination.text}
+            onChange={(text) => setDestination({ text, lat: null, lng: null })}
+            onPlaceSelect={(place) => setDestination({ text: place.description, lat: place.lat, lng: place.lng })}
+            placeholder="Lisbon, Portugal"
+          />
+          <input type="hidden" name="destination_lat" value={destination.lat ?? ""} />
+          <input type="hidden" name="destination_lng" value={destination.lng ?? ""} />
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
@@ -33,6 +47,13 @@ export function CreateTripForm() {
           </div>
         </div>
         <p className="text-xs text-ink-soft">Not sure on dates yet? Leave them blank — you can propose options for the group to vote on.</p>
+        <div className="border-t border-line pt-4">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-ink-soft">
+            Optional — helps tailor suggestions (editable later in trip settings)
+          </p>
+          <PreferenceQuestions answers={answers} onChange={setAnswers} />
+          <input type="hidden" name="preference_answers" value={JSON.stringify(answers)} />
+        </div>
         <FieldError>{state?.error}</FieldError>
         <Button type="submit" className="w-full" disabled={pending}>
           {pending ? "Creating…" : "Create trip"}
