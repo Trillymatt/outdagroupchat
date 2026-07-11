@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { InviteCodeCard } from "@/components/trips/invite-code-card";
 import { MemberList, type MemberRow } from "@/components/trips/member-list";
 import { PendingJoinRequests } from "@/components/trips/pending-join-requests";
+import { TripCompletionCard } from "@/components/trips/trip-completion-card";
 import { DangerZone } from "@/components/trips/danger-zone";
 
 export const metadata: Metadata = { title: "Settings — Tandem" };
@@ -20,7 +21,7 @@ export default async function TripSettingsPage({ params }: { params: Promise<{ t
   const { data: trip } = await supabase
     .from("trips")
     .select(
-      "id, invite_code, trip_members(user_id, display_name, role, can_edit_lodging, can_edit_food, can_edit_itinerary, can_edit_flights, profiles(name, avatar_color))",
+      "id, invite_code, completed_at, trip_members(user_id, display_name, role, can_edit_lodging, can_edit_food, can_edit_itinerary, can_edit_flights, profiles(name, avatar_color, avatar_url))",
     )
     .eq("id", tripId)
     .single();
@@ -52,6 +53,7 @@ export default async function TripSettingsPage({ params }: { params: Promise<{ t
       <InviteCodeCard code={trip.invite_code} />
       {isOwner && <PendingJoinRequests tripId={tripId} initialRequests={joinRequests ?? []} nameLookup={requesterLookup} />}
       <MemberList tripId={tripId} initialMembers={members} currentUserId={user.id} isOwner={isOwner} />
+      {isOwner && <TripCompletionCard tripId={tripId} initialCompleted={Boolean(trip.completed_at)} />}
       {isOwner && <DangerZone tripId={tripId} />}
     </div>
   );

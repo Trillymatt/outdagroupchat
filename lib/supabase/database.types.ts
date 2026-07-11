@@ -715,6 +715,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_color: string
+          avatar_url: string | null
           created_at: string
           email: string
           id: string
@@ -725,6 +726,7 @@ export type Database = {
         }
         Insert: {
           avatar_color?: string
+          avatar_url?: string | null
           created_at?: string
           email: string
           id: string
@@ -735,6 +737,7 @@ export type Database = {
         }
         Update: {
           avatar_color?: string
+          avatar_url?: string | null
           created_at?: string
           email?: string
           id?: string
@@ -1073,6 +1076,7 @@ export type Database = {
       }
       trips: {
         Row: {
+          completed_at: string | null
           cover_image: string | null
           created_at: string
           created_by: string
@@ -1088,6 +1092,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          completed_at?: string | null
           cover_image?: string | null
           created_at?: string
           created_by: string
@@ -1103,6 +1108,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          completed_at?: string | null
           cover_image?: string | null
           created_at?: string
           created_by?: string
@@ -1154,6 +1160,7 @@ export type Database = {
           p_start_date?: string
         }
         Returns: {
+          completed_at: string | null
           cover_image: string | null
           created_at: string
           created_by: string
@@ -1178,11 +1185,32 @@ export type Database = {
       delete_trip: { Args: { p_trip_id: string }; Returns: undefined }
       deny_join_request: { Args: { p_request_id: string }; Returns: undefined }
       gen_invite_code: { Args: never; Returns: string }
+      get_public_completed_trips: {
+        Args: { p_user_id: string }
+        Returns: {
+          completed_at: string
+          cover_image: string
+          destination: string
+          end_date: string
+          id: string
+          name: string
+          start_date: string
+        }[]
+      }
+      get_public_profile: {
+        Args: { p_user_id: string }
+        Returns: {
+          avatar_color: string
+          avatar_url: string
+          name: string
+        }[]
+      }
       is_trip_member: { Args: { target_trip_id: string }; Returns: boolean }
       is_trip_owner: { Args: { target_trip_id: string }; Returns: boolean }
       join_trip_by_code: {
         Args: { p_invite_code: string }
         Returns: {
+          completed_at: string | null
           cover_image: string | null
           created_at: string
           created_by: string
@@ -1221,6 +1249,10 @@ export type Database = {
           out_trip_id: string
           out_trip_name: string
         }[]
+      }
+      set_trip_completed: {
+        Args: { p_completed: boolean; p_trip_id: string }
+        Returns: undefined
       }
       set_trip_member_permission: {
         Args: {

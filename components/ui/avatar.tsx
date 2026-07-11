@@ -9,14 +9,29 @@ function initials(name: string) {
 export function Avatar({
   name,
   color = "#1f5f42",
+  avatarUrl,
   size = 32,
   className,
 }: {
   name: string;
   color?: string;
+  avatarUrl?: string | null;
   size?: number;
   className?: string;
 }) {
+  if (avatarUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element -- remote Storage URL, no next/image domain config needed
+      <img
+        src={avatarUrl}
+        alt={name}
+        title={name}
+        className={cn("rounded-full object-cover ring-2 ring-surface shrink-0", className)}
+        style={{ width: size, height: size }}
+      />
+    );
+  }
+
   return (
     <div
       title={name}
@@ -33,7 +48,7 @@ export function AvatarStack({
   size = 32,
   max = 5,
 }: {
-  members: { name: string; color?: string }[];
+  members: { name: string; color?: string; avatarUrl?: string | null }[];
   size?: number;
   max?: number;
 }) {
@@ -42,7 +57,7 @@ export function AvatarStack({
   return (
     <div className="flex items-center" style={{ marginLeft: 6 }}>
       {shown.map((m, i) => (
-        <Avatar key={i} name={m.name} color={m.color} size={size} className="-ml-1.5 first:ml-0" />
+        <Avatar key={i} name={m.name} color={m.color} avatarUrl={m.avatarUrl} size={size} className="-ml-1.5 first:ml-0" />
       ))}
       {overflow > 0 && (
         <div

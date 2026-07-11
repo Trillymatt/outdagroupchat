@@ -23,6 +23,12 @@ export async function deleteTripAction(tripId: string) {
   redirect("/dashboard");
 }
 
+export async function setTripCompletedAction(tripId: string, completed: boolean) {
+  const supabase = await createClient();
+  await supabase.rpc("set_trip_completed", { p_trip_id: tripId, p_completed: completed });
+  revalidatePath(`/trips/${tripId}/settings`);
+}
+
 export async function setTripMemberPermissionAction(
   tripId: string,
   userId: string,
