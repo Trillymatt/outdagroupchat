@@ -2,16 +2,30 @@
 
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { MapPin, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRealtimeList } from "@/lib/hooks/use-realtime-list";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
+import { CoverPhotoField } from "@/components/trips/cover-photo-field";
 import { formatDateRange } from "@/lib/utils/dates";
 import type { TripLeg } from "@/lib/types/trip";
 
 const emptyDraft = { city: "", start_date: "", end_date: "" };
+
+/** Auto-suggest a cover photo for a newly added leg. Fire-and-forget, best-effort. */
+async function suggestCoverPhoto(legId: string, city: string) {
+  try {
+    const res = await fetch(`/api/images/city-photo?q=${encodeURIComponent(city)}`);
+    if (!res.ok) return;
+    const { url } = await res.json();
+    if (!url) return;
+    await createClient().from("trip_legs").update({ cover_image: url }).eq("id", legId);
+  } catch {
+    // Best-effort; the leg just won't have a cover photo yet.
+  }
+}
 
 export function TripLegsCard({ tripId, currentUserId, initialLegs }: { tripId: string; currentUserId: string; initialLegs: TripLeg[] }) {
   const [legs, setLegs] = useRealtimeList<TripLeg>("trip_legs", tripId, initialLegs);
@@ -39,6 +53,7 @@ export function TripLegsCard({ tripId, currentUserId, initialLegs }: { tripId: s
       setLegs((prev) => (prev.some((l) => l.id === data.id) ? prev : [...prev, data]));
       setDraft(emptyDraft);
       setAdding(false);
+      void suggestCoverPhoto(data.id, data.city);
     }
   }
 
@@ -47,6 +62,11 @@ export function TripLegsCard({ tripId, currentUserId, initialLegs }: { tripId: s
     const supabase = createClient();
     setLegs((prev) => prev.filter((l) => l.id !== legId));
     await supabase.from("trip_legs").delete().eq("id", legId);
+  }
+
+  async function handleCoverChange(legId: string, url: string) {
+    setLegs((prev) => prev.map((l) => (l.id === legId ? { ...l, cover_image: url } : l)));
+    await createClient().from("trip_legs").update({ cover_image: url }).eq("id", legId);
   }
 
   return (
@@ -123,8 +143,14 @@ export function TripLegsCard({ tripId, currentUserId, initialLegs }: { tripId: s
                 transition={{ type: "spring", stiffness: 400, damping: 32 }}
                 className="group flex items-center justify-between gap-2 rounded-2xl border border-line bg-paper px-3.5 py-2.5"
               >
-                <div className="flex items-center gap-2 min-w-0">
-                  <MapPin className="h-4 w-4 shrink-0 text-green-dark" />
+                <div className="flex min-w-0 items-center gap-3">
+                  <CoverPhotoField
+                    folderId={`${tripId}/legs/${leg.id}`}
+                    currentUrl={leg.cover_image}
+                    onChange={(url) => handleCoverChange(leg.id, url)}
+                    size="sm"
+                    alt={leg.city}
+                  />
                   <div className="min-w-0">
                     <p className="truncate font-medium text-ink">{leg.city}</p>
                     <p className="text-xs text-ink-soft">{formatDateRange(leg.start_date, leg.end_date)}</p>

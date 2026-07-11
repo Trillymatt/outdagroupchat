@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { notifyOptedInMembers } from "@/lib/actions/notify";
+import { searchCityPhoto, trackDownload } from "@/lib/images/unsplash-client";
 
 export type TripFormState = { error?: string } | undefined;
 
@@ -23,6 +24,15 @@ export async function createTripAction(_prevState: TripFormState, formData: Form
   });
 
   if (error || !data) return { error: error?.message ?? "Could not create the trip." };
+
+  if (destination) {
+    const photo = await searchCityPhoto(destination);
+    if (photo) {
+      await supabase.from("trips").update({ cover_image: photo.url }).eq("id", data.id);
+      void trackDownload(photo.downloadLocation);
+    }
+  }
+
   redirect(`/trips/${data.id}/overview`);
 }
 

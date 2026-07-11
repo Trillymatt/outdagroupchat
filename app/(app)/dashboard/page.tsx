@@ -14,6 +14,7 @@ interface RawTrip {
   destination: string | null;
   start_date: string | null;
   end_date: string | null;
+  cover_image: string | null;
   trip_members: { display_name: string; profiles: { name: string; avatar_color: string } | null }[];
   flights: { status: string }[];
 }
@@ -23,7 +24,7 @@ export default async function DashboardPage() {
 
   const { data } = await supabase
     .from("trips")
-    .select("id, name, destination, start_date, end_date, trip_members(display_name, profiles(name, avatar_color)), flights(status)")
+    .select("id, name, destination, start_date, end_date, cover_image, trip_members(display_name, profiles(name, avatar_color)), flights(status)")
     .order("start_date", { ascending: true, nullsFirst: false });
 
   const trips = ((data ?? []) as unknown as RawTrip[]).map((trip): TripCardData & { isPast: boolean } => ({
@@ -32,6 +33,7 @@ export default async function DashboardPage() {
     destination: trip.destination,
     start_date: trip.start_date,
     end_date: trip.end_date,
+    cover_image: trip.cover_image,
     members: trip.trip_members.map((m) => ({ name: m.profiles?.name ?? m.display_name, color: m.profiles?.avatar_color })),
     flightsTotal: trip.trip_members.length,
     flightsBooked: trip.flights.filter((f) => f.status === "booked").length,

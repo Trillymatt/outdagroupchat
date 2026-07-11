@@ -6,18 +6,25 @@ import { createClient } from "@/lib/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Input, Label } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { CoverPhotoField } from "@/components/trips/cover-photo-field";
 
 export interface TripDetailsValues {
   name: string;
   destination: string | null;
   start_date: string | null;
   end_date: string | null;
+  cover_image: string | null;
 }
 
 export function TripDetailsCard({ tripId, initial }: { tripId: string; initial: TripDetailsValues }) {
   const [values, setValues] = useState(initial);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  async function saveCoverImage(url: string) {
+    setValues((v) => ({ ...v, cover_image: url }));
+    await createClient().from("trips").update({ cover_image: url }).eq("id", tripId);
+  }
 
   async function save() {
     setSaving(true);
@@ -40,6 +47,7 @@ export function TripDetailsCard({ tripId, initial }: { tripId: string; initial: 
     <Card className="space-y-4">
       <h2 className="font-semibold text-ink">Trip details</h2>
       <p className="text-xs text-ink-soft">Anyone on the trip can edit these.</p>
+      <CoverPhotoField folderId={tripId} currentUrl={values.cover_image} onChange={saveCoverImage} alt={values.name} />
       <div>
         <Label htmlFor="trip-name">Name</Label>
         <Input id="trip-name" value={values.name} onChange={(e) => setValues((v) => ({ ...v, name: e.target.value }))} />

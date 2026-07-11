@@ -10,6 +10,7 @@ export interface TripCardData {
   destination: string | null;
   start_date: string | null;
   end_date: string | null;
+  cover_image: string | null;
   members: { name: string; color?: string }[];
   flightsBooked: number;
   flightsTotal: number;
@@ -18,7 +19,11 @@ export interface TripCardData {
 export function TripCard({ trip }: { trip: TripCardData }) {
   return (
     <Link href={`/trips/${trip.id}/overview`}>
-      <HoverCard className="h-full space-y-3">
+      <HoverCard className="h-full space-y-3 overflow-hidden">
+        {trip.cover_image && (
+          // eslint-disable-next-line @next/next/no-img-element -- remote Unsplash/Storage URL
+          <img src={trip.cover_image} alt="" className="-mx-5 -mt-5 mb-1 h-28 w-[calc(100%+2.5rem)] max-w-none object-cover" />
+        )}
         <div>
           <h3 className="font-semibold text-ink">{trip.name}</h3>
           <p className="text-sm text-ink-soft">{trip.destination || "Destination TBD"}</p>

@@ -24,7 +24,7 @@ export default async function TripOverviewPage({ params }: { params: Promise<{ t
   const { data: trip } = await supabase
     .from("trips")
     .select(
-      "id, name, destination, start_date, end_date, invite_code, trip_members(user_id, display_name, role, can_edit_lodging, can_edit_food, can_edit_itinerary, can_edit_flights, profiles(name, avatar_color))",
+      "id, name, destination, start_date, end_date, cover_image, invite_code, trip_members(user_id, display_name, role, can_edit_lodging, can_edit_food, can_edit_itinerary, can_edit_flights, profiles(name, avatar_color))",
     )
     .eq("id", tripId)
     .single();
@@ -47,7 +47,13 @@ export default async function TripOverviewPage({ params }: { params: Promise<{ t
       <div className="space-y-6">
         <TripDetailsCard
           tripId={tripId}
-          initial={{ name: trip.name, destination: trip.destination, start_date: trip.start_date, end_date: trip.end_date }}
+          initial={{
+            name: trip.name,
+            destination: trip.destination,
+            start_date: trip.start_date,
+            end_date: trip.end_date,
+            cover_image: trip.cover_image,
+          }}
         />
         <TripLegsCard tripId={tripId} currentUserId={user.id} initialLegs={legs ?? []} />
         <DateAvailability
