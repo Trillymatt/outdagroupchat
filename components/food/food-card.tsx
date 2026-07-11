@@ -6,10 +6,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AvatarStack } from "@/components/ui/avatar";
 import { LinkPreview } from "@/components/ui/link-preview";
+import { CommentThread } from "@/components/comments/comment-thread";
 import type { Restaurant } from "@/lib/types/trip";
 
 export function FoodCard({
   restaurant,
+  tripId,
+  currentUserId,
+  authorsById,
   voteCount,
   votedByMe,
   voters,
@@ -17,9 +21,11 @@ export function FoodCard({
   canEdit,
   onToggleVote,
   onDelete,
-  commentSlot,
 }: {
   restaurant: Restaurant;
+  tripId: string;
+  currentUserId: string;
+  authorsById: Map<string, { name: string; color?: string }>;
   voteCount: number;
   votedByMe: boolean;
   voters: { name: string; color?: string }[];
@@ -27,7 +33,6 @@ export function FoodCard({
   canEdit: boolean;
   onToggleVote: () => void;
   onDelete: () => void;
-  commentSlot?: React.ReactNode;
 }) {
   return (
     <motion.div
@@ -70,7 +75,13 @@ export function FoodCard({
         {authorName && <span className="text-xs text-ink-soft">added by {authorName}</span>}
       </div>
 
-      {commentSlot}
+      <CommentThread
+        tripId={tripId}
+        targetType="restaurant"
+        targetId={restaurant.id}
+        currentUserId={currentUserId}
+        authorsById={authorsById}
+      />
     </motion.div>
   );
 }

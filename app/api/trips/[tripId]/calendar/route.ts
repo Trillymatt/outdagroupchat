@@ -1,60 +1,47 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { buildCalendar, addDays, type IcsEvent } from "@/lib/utils/ics";
 
-function escapeText(value: string): string {
-  return value.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+function slugify(name: string): string {
+  const slug = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return slug || "trip";
 }
 
-/** RFC 5545 says content lines should be folded at 75 octets. */
-function fold(line: string): string {
-  if (line.length <= 75) return line;
-  const parts: string[] = [];
-  let rest = line;
-  while (rest.length > 75) {
-    parts.push(rest.slice(0, 75));
-    rest = " " + rest.slice(75);
-  }
-  parts.push(rest);
-  return parts.join("\r\n");
-}
-
-/** Floating local time — shows at destination wall-clock time on any device. */
-function localDateTime(day: string, time: string): string {
-  return `${day.replace(/-/g, "")}T${time.replace(/:/g, "").slice(0, 6).padEnd(6, "0")}`;
-}
-
-function utcDateTime(iso: string): string {
-  return new Date(iso).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
-}
-
-function addOneHour(day: string, time: string): string {
-  const d = new Date(`${day}T${time}`);
-  d.setHours(d.getHours() + 1);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`;
-}
-
-function nextDay(day: string): string {
-  const d = new Date(`${day}T00:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + 1);
-  return d.toISOString().slice(0, 10).replace(/-/g, "");
+function formatTime(time: string): string {
+  const [h, m] = time.split(":");
+  const hour = Number(h);
+  if (Number.isNaN(hour)) return time;
+  const period = hour >= 12 ? "PM" : "AM";
+  const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+  return `${displayHour}:${m ?? "00"} ${period}`;
 }
 
 export async function GET(_request: Request, { params }: { params: Promise<{ tripId: string }> }) {
   const { tripId } = await params;
   const supabase = await createClient();
-
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
 
-  // RLS returns nothing unless the caller is a member of the trip
-  const { data: trip } = await supabase.from("trips").select("id, name, destination").eq("id", tripId).single();
-  if (!trip) return NextResponse.json({ error: "Trip not found" }, { status: 404 });
+  // RLS restricts trips to members, so a miss here is either a bad id or a non-member.
+  const { data: trip } = await supabase
+    .from("trips")
+    .select("id, name, destination, start_date, end_date")
+    .eq("id", tripId)
+    .single();
+  if (!trip) return NextResponse.json({ error: "Trip not found, or you're not a member" }, { status: 404 });
 
   const [{ data: items }, { data: flights }, { data: members }] = await Promise.all([
-    supabase.from("itinerary_items").select("*").eq("trip_id", tripId).order("day").order("position"),
+    supabase
+      .from("itinerary_items")
+      .select("id, title, day, time, description, location, link, position")
+      .eq("trip_id", tripId)
+      .order("day", { ascending: true })
+      .order("position", { ascending: true }),
     supabase.from("flights").select("*").eq("trip_id", tripId).not("departure_time", "is", null),
     supabase.from("trip_members").select("user_id, display_name, profiles(name)").eq("trip_id", tripId),
   ]);
@@ -66,53 +53,74 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tri
     }),
   );
 
-  const now = utcDateTime(new Date().toISOString());
-  const lines: string[] = [
-    "BEGIN:VCALENDAR",
-    "VERSION:2.0",
-    "PRODID:-//Tandem//Trip Calendar//EN",
-    "CALSCALE:GREGORIAN",
-    "METHOD:PUBLISH",
-    fold(`X-WR-CALNAME:${escapeText(trip.name)}`),
-  ];
+  const events: IcsEvent[] = [];
+
+  if (trip.start_date && trip.end_date) {
+    events.push({
+      uid: `trip-${trip.id}@tandem`,
+      summary: trip.destination ? `${trip.name} — ${trip.destination}` : trip.name,
+      location: trip.destination,
+      allDay: true,
+      start: trip.start_date,
+      // DTEND is exclusive for all-day events, so span through the last trip day.
+      end: addDays(trip.end_date, 1),
+    });
+  }
 
   for (const item of items ?? []) {
-    lines.push("BEGIN:VEVENT", `UID:itinerary-${item.id}@tandem`, `DTSTAMP:${now}`);
+    const descriptionParts: string[] = [];
+    if (item.time) descriptionParts.push(`Time: ${formatTime(item.time)}`);
+    if (item.description) descriptionParts.push(item.description);
+    const description = descriptionParts.length > 0 ? descriptionParts.join("\n") : null;
+
     if (item.time) {
-      lines.push(`DTSTART:${localDateTime(item.day, item.time)}`, `DTEND:${addOneHour(item.day, item.time)}`);
+      // Floating local time: shows at destination wall-clock time on any device.
+      events.push({
+        uid: `itinerary-${item.id}@tandem`,
+        summary: item.title,
+        description,
+        location: item.location,
+        url: item.link,
+        allDay: false,
+        floating: true,
+        day: item.day,
+        time: item.time,
+      });
     } else {
-      lines.push(`DTSTART;VALUE=DATE:${item.day.replace(/-/g, "")}`, `DTEND;VALUE=DATE:${nextDay(item.day)}`);
+      events.push({
+        uid: `itinerary-${item.id}@tandem`,
+        summary: item.title,
+        description,
+        location: item.location,
+        url: item.link,
+        allDay: true,
+        start: item.day,
+      });
     }
-    lines.push(fold(`SUMMARY:${escapeText(item.title)}`));
-    if (item.description) lines.push(fold(`DESCRIPTION:${escapeText(item.description)}`));
-    if (item.location) lines.push(fold(`LOCATION:${escapeText(item.location)}`));
-    if (item.link) lines.push(fold(`URL:${escapeText(item.link)}`));
-    lines.push("END:VEVENT");
   }
 
   for (const flight of flights ?? []) {
+    if (!flight.departure_time) continue;
     const who = nameOf.get(flight.user_id) ?? "Member";
     const route = [flight.departure_airport, flight.arrival_airport].filter(Boolean).join(" → ");
     const label = [flight.airline, flight.flight_number].filter(Boolean).join(" ");
-    lines.push(
-      "BEGIN:VEVENT",
-      `UID:flight-${flight.id}@tandem`,
-      `DTSTAMP:${now}`,
-      `DTSTART:${utcDateTime(flight.departure_time!)}`,
-      `DTEND:${utcDateTime(flight.arrival_time ?? flight.departure_time!)}`,
-      fold(`SUMMARY:${escapeText(`✈️ ${who}: ${label || "Flight"}${route ? ` (${route})` : ""}`)}`),
-    );
-    if (flight.notes) lines.push(fold(`DESCRIPTION:${escapeText(flight.notes)}`));
-    lines.push("END:VEVENT");
+    events.push({
+      uid: `flight-${flight.id}@tandem`,
+      summary: `✈️ ${who}: ${label || "Flight"}${route ? ` (${route})` : ""}`,
+      description: flight.notes ?? null,
+      allDay: false,
+      start: new Date(flight.departure_time),
+      end: flight.arrival_time ? new Date(flight.arrival_time) : undefined,
+    });
   }
 
-  lines.push("END:VCALENDAR");
+  const ics = buildCalendar({ calendarName: trip.name, events, now: new Date() });
 
-  const slug = trip.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "trip";
-  return new NextResponse(lines.join("\r\n") + "\r\n", {
+  return new Response(ics, {
     headers: {
       "Content-Type": "text/calendar; charset=utf-8",
-      "Content-Disposition": `attachment; filename="${slug}.ics"`,
+      "Content-Disposition": `attachment; filename="tandem-${slugify(trip.name)}.ics"`,
+      "Cache-Control": "no-store",
     },
   });
 }

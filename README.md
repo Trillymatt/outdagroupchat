@@ -14,10 +14,10 @@ plan itinerary, lodging, food, flights, and budget together in one place, live.
 ## 1. Set up Supabase
 
 1. Create a project at [supabase.com](https://supabase.com).
-2. In the SQL Editor, run the contents of `supabase/migrations/20250101000000_init.sql`. This creates every
-   table, Row Level Security policy, and the `create_trip` / `join_trip_by_code` / `leave_trip` /
-   `remove_trip_member` / `delete_trip` RPC functions the app calls.
-   - If you use the Supabase CLI instead: `supabase db push` (with the project linked) applies the same file.
+2. Link the project with the Supabase CLI, then run `supabase db push`. This applies every file in
+   `supabase/migrations/` in timestamp order. Do not run only the initial migration: later migrations add
+   permissions, voting, availability, expenses, comments, activity, booking details, and security hardening.
+   - If the SQL Editor is your only option, run every migration file in filename order.
 3. In **Authentication → Providers → Email**, decide whether to require email confirmation. If you leave it on
    (the default), a new signup won't get a session until they click the confirmation email — the signup form
    already handles this by showing a "check your email" message instead of redirecting. Turning it off gives
@@ -63,9 +63,8 @@ member joining).
 
 ## How it's organized
 
-- `supabase/migrations/` — the full schema: `profiles`, `trips`, `trip_members`, `flights`, `lodging_options` (+
-  `lodging_votes`), `itinerary_items`, `restaurants` (+ `restaurant_votes`), `ai_suggestions`, `packing_items` (+
-  `packing_item_checks`), `trip_date_proposals` (+ `trip_date_votes`) — all with RLS scoped to trip membership.
+- `supabase/migrations/` — the full schema, including trip membership, availability, itinerary/lodging/food/flight
+  planning, expenses, comments, documents, activity, packing, Row Level Security, and Realtime publication setup.
 - `lib/supabase/` — browser client, server client, and the Next.js middleware that refreshes the auth session.
 - `lib/hooks/use-realtime-list.ts` — the shared realtime pattern every tab uses: subscribe to Postgres changes
   for a trip's rows and keep local state in sync live, no refresh needed.

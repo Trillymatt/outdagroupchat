@@ -15,6 +15,9 @@ import type { ItineraryItem } from "@/lib/types/trip";
 
 function SortableItem({
   item,
+  tripId,
+  currentUserId,
+  authorsById,
   authorName,
   authorColor,
   voteCount,
@@ -24,9 +27,11 @@ function SortableItem({
   onToggleVote,
   onEdit,
   onDelete,
-  commentSlot,
 }: {
   item: ItineraryItem;
+  tripId: string;
+  currentUserId: string;
+  authorsById: Map<string, { name: string; color?: string }>;
   authorName?: string;
   authorColor?: string;
   voteCount: number;
@@ -36,7 +41,6 @@ function SortableItem({
   onToggleVote: () => void;
   onEdit: () => void;
   onDelete: () => void;
-  commentSlot?: React.ReactNode;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
 
@@ -44,6 +48,9 @@ function SortableItem({
     <ItineraryItemCard
       ref={setNodeRef}
       item={item}
+      tripId={tripId}
+      currentUserId={currentUserId}
+      authorsById={authorsById}
       authorName={authorName}
       authorColor={authorColor}
       voteCount={voteCount}
@@ -53,7 +60,6 @@ function SortableItem({
       onToggleVote={onToggleVote}
       onEdit={onEdit}
       onDelete={onDelete}
-      commentSlot={commentSlot}
       dragHandleProps={{ ...attributes, ...listeners }}
       isDragging={isDragging}
       style={{
@@ -67,6 +73,7 @@ function SortableItem({
 
 export function ItineraryDayColumn({
   day,
+  tripId,
   items,
   authorLookup,
   currentUserId,
@@ -77,9 +84,9 @@ export function ItineraryDayColumn({
   onAdd,
   onEdit,
   onDelete,
-  renderComments,
 }: {
   day: string;
+  tripId: string;
   items: ItineraryItem[];
   authorLookup: Map<string, { name: string; color?: string }>;
   currentUserId: string;
@@ -90,7 +97,6 @@ export function ItineraryDayColumn({
   onAdd: (values: ItineraryFormValues) => Promise<void>;
   onEdit: (item: ItineraryItem, values: ItineraryFormValues) => Promise<void>;
   onDelete: (item: ItineraryItem) => void;
-  renderComments?: (item: ItineraryItem) => React.ReactNode;
 }) {
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -174,6 +180,9 @@ export function ItineraryDayColumn({
                       <SortableItem
                         key={item.id}
                         item={item}
+                        tripId={tripId}
+                        currentUserId={currentUserId}
+                        authorsById={authorLookup}
                         authorName={authorLookup.get(item.created_by)?.name}
                         authorColor={authorLookup.get(item.created_by)?.color}
                         voteCount={itemVotes.length}
@@ -183,7 +192,6 @@ export function ItineraryDayColumn({
                         onToggleVote={() => onToggleVote(item.id)}
                         onEdit={() => setEditingId(item.id)}
                         onDelete={() => onDelete(item)}
-                        commentSlot={renderComments?.(item)}
                       />
                     );
                   })()

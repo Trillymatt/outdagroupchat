@@ -14,6 +14,7 @@ export interface FlightFormValues {
   departure_time: string;
   arrival_time: string;
   booking_link: string;
+  confirmation_number: string;
   notes: string;
 }
 
@@ -34,6 +35,7 @@ export function flightToFormValues(flight?: Flight | null): FlightFormValues {
     departure_time: toLocalInputValue(flight?.departure_time ?? null),
     arrival_time: toLocalInputValue(flight?.arrival_time ?? null),
     booking_link: flight?.booking_link ?? "",
+    confirmation_number: flight?.confirmation_number ?? "",
     notes: flight?.notes ?? "",
   };
 }
@@ -145,9 +147,20 @@ export function FlightForm({
           />
         </div>
       </div>
-      <div>
-        <Label htmlFor="flight-notes">Notes</Label>
-        <Input id="flight-notes" value={values.notes} onChange={(e) => setValues((v) => ({ ...v, notes: e.target.value }))} />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div>
+          <Label htmlFor="flight-confirmation">Confirmation #</Label>
+          <Input
+            id="flight-confirmation"
+            value={values.confirmation_number}
+            onChange={(e) => setValues((v) => ({ ...v, confirmation_number: e.target.value }))}
+            placeholder="ABC123"
+          />
+        </div>
+        <div>
+          <Label htmlFor="flight-notes">Notes</Label>
+          <Input id="flight-notes" value={values.notes} onChange={(e) => setValues((v) => ({ ...v, notes: e.target.value }))} />
+        </div>
       </div>
       <FieldError>{error}</FieldError>
       <div className="flex justify-end gap-2 pt-1">

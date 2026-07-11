@@ -5,14 +5,12 @@ import { AnimatePresence } from "framer-motion";
 import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRealtimeList, useRealtimeJoinList } from "@/lib/hooks/use-realtime-list";
-import { useTripComments } from "@/lib/hooks/use-trip-comments";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { CommentThread } from "@/components/comments/comment-thread";
 import { FoodCard } from "@/components/food/food-card";
 import { FoodForm, type FoodFormValues } from "@/components/food/food-form";
-import type { Restaurant, TripComment } from "@/lib/types/trip";
+import type { Restaurant } from "@/lib/types/trip";
 
 interface RestaurantVoteRow {
   restaurant_id: string;
@@ -28,7 +26,6 @@ export function FoodClient({
   initialRestaurants,
   initialVotes,
   memberLookup,
-  initialComments,
 }: {
   tripId: string;
   currentUserId: string;
@@ -36,7 +33,6 @@ export function FoodClient({
   initialRestaurants: Restaurant[];
   initialVotes: RestaurantVoteRow[];
   memberLookup: Map<string, { name: string; color?: string }>;
-  initialComments: TripComment[];
 }) {
   const [restaurants, setRestaurants] = useRealtimeList<Restaurant>("restaurants", tripId, initialRestaurants);
   const [votes, setVotes] = useRealtimeJoinList<RestaurantVoteRow>(
@@ -46,7 +42,6 @@ export function FoodClient({
     (v) => `${v.restaurant_id}:${v.user_id}`,
   );
   const [adding, setAdding] = useState(false);
-  const { commentsFor, addComment, deleteComment } = useTripComments(tripId, currentUserId, initialComments);
 
   const votesByRestaurant = useMemo(() => {
     const map = new Map<string, RestaurantVoteRow[]>();
@@ -125,6 +120,9 @@ export function FoodClient({
                 <FoodCard
                   key={restaurant.id}
                   restaurant={restaurant}
+                  tripId={tripId}
+                  currentUserId={currentUserId}
+                  authorsById={memberLookup}
                   voteCount={restaurantVotes.length}
                   votedByMe={restaurantVotes.some((v) => v.user_id === currentUserId)}
                   voters={restaurantVotes.map((v) => memberLookup.get(v.user_id) ?? { name: "Someone" })}
@@ -132,15 +130,6 @@ export function FoodClient({
                   canEdit={restaurant.created_by === currentUserId || canEditOthers}
                   onToggleVote={() => toggleVote(restaurant.id)}
                   onDelete={() => handleDelete(restaurant.id)}
-                  commentSlot={
-                    <CommentThread
-                      comments={commentsFor("restaurant", restaurant.id)}
-                      currentUserId={currentUserId}
-                      memberLookup={memberLookup}
-                      onAdd={(body) => addComment("restaurant", restaurant.id, body)}
-                      onDelete={deleteComment}
-                    />
-                  }
                 />
               );
             })}

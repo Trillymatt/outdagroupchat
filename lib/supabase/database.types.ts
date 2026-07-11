@@ -17,10 +17,10 @@ export type Database = {
     Functions: {
       graphql: {
         Args: {
+          extensions?: Json
           operationName?: string
           query?: string
           variables?: Json
-          extensions?: Json
         }
         Returns: Json
       }
@@ -34,6 +34,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          summary: string
+          trip_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          summary: string
+          trip_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          summary?: string
+          trip_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_events_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_suggestions: {
         Row: {
           content: Json
@@ -79,45 +121,138 @@ export type Database = {
           },
         ]
       }
-      flight_suggestion_votes: {
+      comments: {
         Row: {
+          body: string
           created_at: string
-          flight_suggestion_id: string
+          id: string
+          target_id: string
+          target_type: CommentTargetType
           trip_id: string
           user_id: string
         }
         Insert: {
+          body: string
           created_at?: string
-          flight_suggestion_id: string
+          id?: string
+          target_id: string
+          target_type: CommentTargetType
           trip_id: string
           user_id: string
         }
         Update: {
+          body?: string
           created_at?: string
-          flight_suggestion_id?: string
+          id?: string
+          target_id?: string
+          target_type?: CommentTargetType
           trip_id?: string
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "flight_suggestion_votes_flight_suggestion_id_fkey"
-            columns: ["flight_suggestion_id"]
-            isOneToOne: false
-            referencedRelation: "flight_suggestions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "flight_suggestion_votes_trip_id_fkey"
+            foreignKeyName: "comments_trip_id_fkey"
             columns: ["trip_id"]
             isOneToOne: false
             referencedRelation: "trips"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "flight_suggestion_votes_user_id_fkey"
+            foreignKeyName: "comments_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expense_splits: {
+        Row: {
+          amount: number
+          expense_id: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          expense_id: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          expense_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_splits_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_splits_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expenses: {
+        Row: {
+          amount: number
+          category: ExpenseCategory | null
+          created_at: string
+          created_by: string
+          description: string
+          expense_date: string
+          id: string
+          paid_by: string
+          trip_id: string
+        }
+        Insert: {
+          amount: number
+          category?: ExpenseCategory | null
+          created_at?: string
+          created_by?: string
+          description: string
+          expense_date?: string
+          id?: string
+          paid_by: string
+          trip_id: string
+        }
+        Update: {
+          amount?: number
+          category?: ExpenseCategory | null
+          created_at?: string
+          created_by?: string
+          description?: string
+          expense_date?: string
+          id?: string
+          paid_by?: string
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_paid_by_fkey"
+            columns: ["paid_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
             referencedColumns: ["id"]
           },
         ]
@@ -200,6 +335,7 @@ export type Database = {
           arrival_airport: string | null
           arrival_time: string | null
           booking_link: string | null
+          confirmation_number: string | null
           created_at: string
           departure_airport: string | null
           departure_time: string | null
@@ -218,6 +354,7 @@ export type Database = {
           arrival_airport?: string | null
           arrival_time?: string | null
           booking_link?: string | null
+          confirmation_number?: string | null
           created_at?: string
           departure_airport?: string | null
           departure_time?: string | null
@@ -236,6 +373,7 @@ export type Database = {
           arrival_airport?: string | null
           arrival_time?: string | null
           booking_link?: string | null
+          confirmation_number?: string | null
           created_at?: string
           departure_airport?: string | null
           departure_time?: string | null
@@ -383,6 +521,9 @@ export type Database = {
       }
       lodging_options: {
         Row: {
+          booking_notes: string | null
+          booking_url: string | null
+          confirmation_number: string | null
           created_at: string
           created_by: string
           id: string
@@ -395,6 +536,9 @@ export type Database = {
           url: string | null
         }
         Insert: {
+          booking_notes?: string | null
+          booking_url?: string | null
+          confirmation_number?: string | null
           created_at?: string
           created_by: string
           id?: string
@@ -407,6 +551,9 @@ export type Database = {
           url?: string | null
         }
         Update: {
+          booking_notes?: string | null
+          booking_url?: string | null
+          confirmation_number?: string | null
           created_at?: string
           created_by?: string
           id?: string
@@ -680,51 +827,6 @@ export type Database = {
           },
         ]
       }
-      trip_comments: {
-        Row: {
-          body: string
-          created_at: string
-          created_by: string
-          entity_id: string
-          entity_type: CommentEntityType
-          id: string
-          trip_id: string
-        }
-        Insert: {
-          body: string
-          created_at?: string
-          created_by: string
-          entity_id: string
-          entity_type: CommentEntityType
-          id?: string
-          trip_id: string
-        }
-        Update: {
-          body?: string
-          created_at?: string
-          created_by?: string
-          entity_id?: string
-          entity_type?: CommentEntityType
-          id?: string
-          trip_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "trip_comments_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "trip_comments_trip_id_fkey"
-            columns: ["trip_id"]
-            isOneToOne: false
-            referencedRelation: "trips"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       trip_date_availability: {
         Row: {
           created_at: string
@@ -754,91 +856,6 @@ export type Database = {
           },
           {
             foreignKeyName: "trip_date_availability_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      trip_date_proposals: {
-        Row: {
-          created_at: string
-          end_date: string
-          id: string
-          proposed_by: string
-          start_date: string
-          trip_id: string
-        }
-        Insert: {
-          created_at?: string
-          end_date: string
-          id?: string
-          proposed_by: string
-          start_date: string
-          trip_id: string
-        }
-        Update: {
-          created_at?: string
-          end_date?: string
-          id?: string
-          proposed_by?: string
-          start_date?: string
-          trip_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "trip_date_proposals_proposed_by_fkey"
-            columns: ["proposed_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "trip_date_proposals_trip_id_fkey"
-            columns: ["trip_id"]
-            isOneToOne: false
-            referencedRelation: "trips"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      trip_date_votes: {
-        Row: {
-          created_at: string
-          proposal_id: string
-          trip_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          proposal_id: string
-          trip_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          proposal_id?: string
-          trip_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "trip_date_votes_proposal_id_fkey"
-            columns: ["proposal_id"]
-            isOneToOne: false
-            referencedRelation: "trip_date_proposals"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "trip_date_votes_trip_id_fkey"
-            columns: ["trip_id"]
-            isOneToOne: false
-            referencedRelation: "trips"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "trip_date_votes_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -1001,15 +1018,15 @@ export type Database = {
     }
     Functions: {
       can_edit_category: {
-        Args: { target_trip_id: string; category: string }
+        Args: { category: string; target_trip_id: string }
         Returns: boolean
       }
       create_trip: {
         Args: {
-          p_name: string
           p_destination?: string
-          p_start_date?: string
           p_end_date?: string
+          p_name: string
+          p_start_date?: string
         }
         Returns: {
           cover_image: string | null
@@ -1024,23 +1041,17 @@ export type Database = {
           start_date: string | null
           updated_at: string
         }
+        SetofOptions: {
+          from: "*"
+          to: "trips"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
-      delete_trip: {
-        Args: { p_trip_id: string }
-        Returns: undefined
-      }
-      gen_invite_code: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      is_trip_member: {
-        Args: { target_trip_id: string }
-        Returns: boolean
-      }
-      is_trip_owner: {
-        Args: { target_trip_id: string }
-        Returns: boolean
-      }
+      delete_trip: { Args: { p_trip_id: string }; Returns: undefined }
+      gen_invite_code: { Args: never; Returns: string }
+      is_trip_member: { Args: { target_trip_id: string }; Returns: boolean }
+      is_trip_owner: { Args: { target_trip_id: string }; Returns: boolean }
       join_trip_by_code: {
         Args: { p_invite_code: string }
         Returns: {
@@ -1056,30 +1067,30 @@ export type Database = {
           start_date: string | null
           updated_at: string
         }
+        SetofOptions: {
+          from: "*"
+          to: "trips"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
-      leave_trip: {
-        Args: { p_trip_id: string }
-        Returns: undefined
-      }
+      leave_trip: { Args: { p_trip_id: string }; Returns: undefined }
       remove_trip_member: {
         Args: { p_trip_id: string; p_user_id: string }
         Returns: undefined
       }
       set_trip_member_permission: {
         Args: {
-          p_trip_id: string
-          p_user_id: string
-          p_can_edit_lodging?: boolean
+          p_can_edit_flights?: boolean
           p_can_edit_food?: boolean
           p_can_edit_itinerary?: boolean
-          p_can_edit_flights?: boolean
+          p_can_edit_lodging?: boolean
+          p_trip_id: string
+          p_user_id: string
         }
         Returns: undefined
       }
-      shares_trip_with: {
-        Args: { other_user: string }
-        Returns: boolean
-      }
+      shares_trip_with: { Args: { other_user: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
@@ -1090,21 +1101,25 @@ export type Database = {
   }
 }
 
-type DefaultSchema = Database[Extract<keyof Database, "public">]
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
@@ -1122,14 +1137,16 @@ export type Tables<
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
@@ -1145,14 +1162,16 @@ export type TablesInsert<
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
@@ -1168,14 +1187,16 @@ export type TablesUpdate<
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
-> = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
@@ -1183,25 +1204,19 @@ export type Enums<
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
-> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
-
-// Hand-added convenience aliases: the `category`/`status` columns below are
-// plain `text` with a check constraint, not native Postgres enums, so codegen
-// types them as `string`. These narrow them to match the check constraints —
-// re-add after every `supabase gen types` regeneration.
-export type ItineraryCategory = "activity" | "food" | "transport" | "lodging" | "other";
-export type FlightStatus = "searching" | "booked" | "opted_out";
-export type CommentEntityType = "lodging" | "itinerary" | "restaurant";
 
 export const Constants = {
   graphql_public: {
@@ -1211,4 +1226,9 @@ export const Constants = {
     Enums: {},
   },
 } as const
+
+export type ItineraryCategory = "activity" | "food" | "transport" | "lodging" | "other";
+export type FlightStatus = "searching" | "booked" | "opted_out";
+export type ExpenseCategory = "lodging" | "food" | "transport" | "activity" | "other";
+export type CommentTargetType = "lodging" | "restaurant" | "itinerary" | "flight_suggestion";
 

@@ -26,12 +26,11 @@ export default async function ItineraryPage({ params }: { params: Promise<{ trip
   } = await supabase.auth.getUser();
   if (!user) notFound();
 
-  const [{ data: trip }, { data: items }, { data: votes }, { data: members }, { data: comments }] = await Promise.all([
+  const [{ data: trip }, { data: items }, { data: votes }, { data: members }] = await Promise.all([
     supabase.from("trips").select("start_date, end_date").eq("id", tripId).single(),
     supabase.from("itinerary_items").select("*").eq("trip_id", tripId).order("day", { ascending: true }).order("position", { ascending: true }),
     supabase.from("itinerary_votes").select("*").eq("trip_id", tripId),
     supabase.from("trip_members").select("user_id, display_name, role, can_edit_itinerary, profiles(name, avatar_color)").eq("trip_id", tripId),
-    supabase.from("trip_comments").select("*").eq("trip_id", tripId).eq("entity_type", "itinerary").order("created_at", { ascending: true }),
   ]);
 
   if (!trip) notFound();
@@ -68,7 +67,6 @@ export default async function ItineraryPage({ params }: { params: Promise<{ trip
         initialVotes={votes ?? []}
         days={days}
         authorLookup={authorLookup}
-        initialComments={comments ?? []}
       />
     </div>
   );

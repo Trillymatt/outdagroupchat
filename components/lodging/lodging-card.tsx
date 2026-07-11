@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Heart, Trash2, Users } from "lucide-react";
+import { Check, Copy, ExternalLink, Heart, Trash2, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AvatarStack } from "@/components/ui/avatar";
 import { LinkPreview } from "@/components/ui/link-preview";
+import { CommentThread } from "@/components/comments/comment-thread";
 import { cn } from "@/lib/utils/cn";
 import type { LodgingOption } from "@/lib/types/trip";
 
@@ -18,6 +20,9 @@ function money(amount: number): string {
 
 export function LodgingCard({
   option,
+  tripId,
+  currentUserId,
+  authorsById,
   voteCount,
   votedByMe,
   voters,
@@ -28,9 +33,11 @@ export function LodgingCard({
   onToggleVote,
   onToggleBooked,
   onDelete,
-  commentSlot,
 }: {
   option: LodgingOption;
+  tripId: string;
+  currentUserId: string;
+  authorsById: Map<string, { name: string; color?: string }>;
   voteCount: number;
   votedByMe: boolean;
   voters: { name: string; color?: string }[];
@@ -41,12 +48,20 @@ export function LodgingCard({
   onToggleVote: () => void;
   onToggleBooked: () => void;
   onDelete: () => void;
-  commentSlot?: React.ReactNode;
 }) {
   const booked = option.status === "booked";
   const pricePerNight = option.price_per_night;
   const total = pricePerNight != null && nights != null ? pricePerNight * nights : null;
   const splitAcross = memberCount > 1 ? memberCount : null;
+  const [copied, setCopied] = useState(false);
+  const hasBookingDetails = Boolean(option.confirmation_number || option.booking_url || option.booking_notes);
+
+  async function copyConfirmation() {
+    if (!option.confirmation_number) return;
+    await navigator.clipboard.writeText(option.confirmation_number);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
 
   return (
     <motion.div
@@ -101,6 +116,34 @@ export function LodgingCard({
 
       {option.url && <LinkPreview url={option.url} fallbackLabel="View listing" />}
 
+      {hasBookingDetails && (
+        <div className="space-y-1.5 rounded-xl border border-success/30 bg-success/5 p-2.5">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-soft">Booking details</p>
+          {option.confirmation_number && (
+            <button
+              type="button"
+              onClick={copyConfirmation}
+              className="inline-flex items-center gap-1.5 text-sm text-ink transition-colors hover:text-green-dark"
+              title="Copy confirmation number"
+            >
+              <span className="font-mono">{option.confirmation_number}</span>
+              {copied ? <Check className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3 text-ink-soft/60" />}
+            </button>
+          )}
+          {option.booking_url && (
+            <a
+              href={option.booking_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-xs font-medium text-green-dark hover:underline"
+            >
+              View booking <ExternalLink className="h-3 w-3" />
+            </a>
+          )}
+          {option.booking_notes && <p className="text-sm text-ink-soft">{option.booking_notes}</p>}
+        </div>
+      )}
+
       <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
         <div className="flex items-center gap-2">
           <Button size="sm" variant={votedByMe ? "primary" : "secondary"} onClick={onToggleVote}>
@@ -119,7 +162,13 @@ export function LodgingCard({
         </div>
       </div>
 
-      {commentSlot}
+      <CommentThread
+        tripId={tripId}
+        targetType="lodging"
+        targetId={option.id}
+        currentUserId={currentUserId}
+        authorsById={authorsById}
+      />
     </motion.div>
   );
 }

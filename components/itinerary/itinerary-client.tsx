@@ -5,12 +5,10 @@ import dynamic from "next/dynamic";
 import { CalendarPlus, LayoutGrid, Map as MapIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRealtimeList, useRealtimeJoinList } from "@/lib/hooks/use-realtime-list";
-import { useTripComments } from "@/lib/hooks/use-trip-comments";
 import { Button } from "@/components/ui/button";
-import { CommentThread } from "@/components/comments/comment-thread";
 import { ItineraryDayColumn } from "@/components/itinerary/itinerary-day-column";
 import type { ItineraryFormValues } from "@/components/itinerary/itinerary-item-form";
-import type { ItineraryItem, TripComment } from "@/lib/types/trip";
+import type { ItineraryItem } from "@/lib/types/trip";
 
 // Leaflet touches `window` at import time, so the map can only load in the browser
 const ItineraryMap = dynamic(() => import("@/components/itinerary/itinerary-map").then((m) => m.ItineraryMap), {
@@ -48,7 +46,6 @@ export function ItineraryClient({
   initialVotes,
   days,
   authorLookup,
-  initialComments,
 }: {
   tripId: string;
   currentUserId: string;
@@ -57,7 +54,6 @@ export function ItineraryClient({
   initialVotes: ItineraryVoteRow[];
   days: string[];
   authorLookup: Map<string, { name: string; color?: string }>;
-  initialComments: TripComment[];
 }) {
   const [items, setItems] = useRealtimeList<ItineraryItem>("itinerary_items", tripId, initialItems);
   const [votes, setVotes] = useRealtimeJoinList<ItineraryVoteRow>(
@@ -67,7 +63,6 @@ export function ItineraryClient({
     (v) => `${v.itinerary_item_id}:${v.user_id}`,
   );
   const [view, setView] = useState<"board" | "map">("board");
-  const { commentsFor, addComment, deleteComment } = useTripComments(tripId, currentUserId, initialComments);
 
   const votesByItem = useMemo(() => {
     const map = new Map<string, ItineraryVoteRow[]>();
@@ -193,6 +188,7 @@ export function ItineraryClient({
             <ItineraryDayColumn
               key={day}
               day={day}
+              tripId={tripId}
               items={itemsByDay.get(day) ?? []}
               authorLookup={authorLookup}
               currentUserId={currentUserId}
@@ -203,15 +199,6 @@ export function ItineraryClient({
               onEdit={handleEdit}
               onDelete={handleDelete}
               onReorder={handleReorder}
-              renderComments={(item) => (
-                <CommentThread
-                  comments={commentsFor("itinerary", item.id)}
-                  currentUserId={currentUserId}
-                  memberLookup={authorLookup}
-                  onAdd={(body) => addComment("itinerary", item.id, body)}
-                  onDelete={deleteComment}
-                />
-              )}
             />
           ))}
         </div>

@@ -2,14 +2,19 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { ChevronDown } from "lucide-react";
 import { Input, Textarea, Label, FieldError } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils/cn";
 
 export interface LodgingFormValues {
   name: string;
   url: string;
   price_per_night: string;
   notes: string;
+  confirmation_number: string;
+  booking_url: string;
+  booking_notes: string;
 }
 
 export function LodgingForm({
@@ -19,9 +24,18 @@ export function LodgingForm({
   onCancel: () => void;
   onSubmit: (values: LodgingFormValues) => Promise<void>;
 }) {
-  const [values, setValues] = useState<LodgingFormValues>({ name: "", url: "", price_per_night: "", notes: "" });
+  const [values, setValues] = useState<LodgingFormValues>({
+    name: "",
+    url: "",
+    price_per_night: "",
+    notes: "",
+    confirmation_number: "",
+    booking_url: "",
+    booking_notes: "",
+  });
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [showBooking, setShowBooking] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -88,6 +102,48 @@ export function LodgingForm({
           onChange={(e) => setValues((v) => ({ ...v, notes: e.target.value }))}
           placeholder="Why this one?"
         />
+      </div>
+      <div>
+        <button
+          type="button"
+          onClick={() => setShowBooking((v) => !v)}
+          className="inline-flex items-center gap-1 text-xs font-medium text-ink-soft transition-colors hover:text-ink"
+        >
+          <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", showBooking && "rotate-180")} />
+          Booking details (optional)
+        </button>
+        {showBooking && (
+          <div className="mt-3 space-y-3">
+            <div>
+              <Label htmlFor="lodging-confirmation">Confirmation number</Label>
+              <Input
+                id="lodging-confirmation"
+                value={values.confirmation_number}
+                onChange={(e) => setValues((v) => ({ ...v, confirmation_number: e.target.value }))}
+                placeholder="ABC123"
+              />
+            </div>
+            <div>
+              <Label htmlFor="lodging-booking-url">Booking link</Label>
+              <Input
+                id="lodging-booking-url"
+                type="url"
+                value={values.booking_url}
+                onChange={(e) => setValues((v) => ({ ...v, booking_url: e.target.value }))}
+                placeholder="https://..."
+              />
+            </div>
+            <div>
+              <Label htmlFor="lodging-booking-notes">Booking notes</Label>
+              <Textarea
+                id="lodging-booking-notes"
+                value={values.booking_notes}
+                onChange={(e) => setValues((v) => ({ ...v, booking_notes: e.target.value }))}
+                placeholder="Check-in after 3pm, gate code, etc."
+              />
+            </div>
+          </div>
+        )}
       </div>
       <div className="flex justify-end gap-2 pt-1">
         <Button type="button" variant="ghost" size="sm" onClick={onCancel} disabled={saving}>

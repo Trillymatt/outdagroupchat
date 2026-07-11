@@ -15,6 +15,7 @@ export function TripTabsNav({ tripId }: { tripId: string }) {
     { key: "flights", label: "Flights", href: `${base}/flights` },
     { key: "budget", label: "Budget", href: `${base}/budget` },
     { key: "documents", label: "Documents", href: `${base}/documents` },
+    { key: "expenses", label: "Expenses", href: `${base}/expenses` },
     { key: "assistant", label: "Assistant", href: `${base}/assistant` },
   ];
 

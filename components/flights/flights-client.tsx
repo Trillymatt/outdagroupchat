@@ -45,6 +45,7 @@ export function FlightsClient({
       departure_time: values.departure_time ? new Date(values.departure_time).toISOString() : null,
       arrival_time: values.arrival_time ? new Date(values.arrival_time).toISOString() : null,
       booking_link: values.booking_link.trim() || null,
+      confirmation_number: values.confirmation_number.trim() || null,
       notes: values.notes.trim() || null,
     };
 

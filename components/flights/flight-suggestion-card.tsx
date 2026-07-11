@@ -1,10 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ExternalLink, Heart, Trash2 } from "lucide-react";
+import { ExternalLink, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AvatarStack } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils/cn";
 import type { FlightSuggestion } from "@/lib/types/trip";
 
@@ -17,22 +16,14 @@ function formatTime(iso: string | null) {
 
 export function FlightSuggestionCard({
   option,
-  voteCount,
-  votedByMe,
-  voters,
   authorName,
   canEdit,
-  onToggleVote,
   onToggleBooked,
   onDelete,
 }: {
   option: FlightSuggestion;
-  voteCount: number;
-  votedByMe: boolean;
-  voters: { name: string; color?: string }[];
   authorName?: string;
   canEdit: boolean;
-  onToggleVote: () => void;
   onToggleBooked: () => void;
   onDelete: () => void;
 }) {
@@ -89,22 +80,13 @@ export function FlightSuggestionCard({
         </a>
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-        <div className="flex items-center gap-2">
-          <Button size="sm" variant={votedByMe ? "primary" : "secondary"} onClick={onToggleVote}>
-            <Heart className="h-3.5 w-3.5" />
-            {voteCount}
+      <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
+        {authorName && <span className="text-xs text-ink-soft">by {authorName}</span>}
+        {canEdit && (
+          <Button size="sm" variant="ghost" onClick={onToggleBooked}>
+            {booked ? "Move back to proposed" : "Mark booked"}
           </Button>
-          {voters.length > 0 && <AvatarStack members={voters} size={22} max={4} />}
-        </div>
-        <div className="flex items-center gap-2">
-          {authorName && <span className="text-xs text-ink-soft">by {authorName}</span>}
-          {canEdit && (
-            <Button size="sm" variant="ghost" onClick={onToggleBooked}>
-              {booked ? "Move back to proposed" : "Mark booked"}
-            </Button>
-          )}
-        </div>
+        )}
       </div>
     </motion.div>
   );
