@@ -11,7 +11,7 @@ import type { ItineraryFormValues } from "@/components/itinerary/itinerary-item-
 import type { ItineraryItem, TripLeg } from "@/lib/types/trip";
 import { formatDateRange } from "@/lib/utils/dates";
 
-// Leaflet touches `window` at import time, so the map can only load in the browser
+// The Google Maps JS API touches `window` at load time, so the map can only load in the browser
 const ItineraryMap = dynamic(() => import("@/components/itinerary/itinerary-map").then((m) => m.ItineraryMap), {
   ssr: false,
   loading: () => <div className="h-[420px] animate-pulse rounded-2xl border border-line bg-ink/[0.03]" />,
@@ -119,6 +119,8 @@ export function ItineraryClient({
         title: values.title.trim(),
         description: values.description.trim() || null,
         location: values.location.trim() || null,
+        lat: values.lat,
+        lng: values.lng,
         category: values.category,
         cost: values.cost ? Number(values.cost) : null,
         link: values.link.trim() || null,
@@ -130,7 +132,8 @@ export function ItineraryClient({
 
     if (!error && data) {
       setItems((prev) => (prev.some((i) => i.id === data.id) ? prev : [...prev, data]));
-      void geocodeAndSave(data.id, data.location);
+      // Places Autocomplete already resolved coordinates; only geocode free-text-only locations.
+      if (data.location && data.lat == null) void geocodeAndSave(data.id, data.location);
     }
   }
 
@@ -146,12 +149,13 @@ export function ItineraryClient({
       category: values.category,
       cost: values.cost ? Number(values.cost) : null,
       link: values.link.trim() || null,
-      ...(locationChanged ? { lat: null, lng: null } : {}),
+      lat: locationChanged ? values.lat : item.lat,
+      lng: locationChanged ? values.lng : item.lng,
     };
 
     setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, ...patch } : i)));
     await supabase.from("itinerary_items").update(patch).eq("id", item.id);
-    if (locationChanged) void geocodeAndSave(item.id, patch.location);
+    if (locationChanged && patch.location && patch.lat == null) void geocodeAndSave(item.id, patch.location);
   }
 
   async function toggleVote(itemId: string) {

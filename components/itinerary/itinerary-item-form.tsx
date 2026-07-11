@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Input, Textarea, Select, Label, FieldError } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { PlaceAutocomplete } from "@/components/ui/place-autocomplete";
 import type { ItineraryItem } from "@/lib/types/trip";
 import type { ItineraryCategory } from "@/lib/supabase/database.types";
 
@@ -21,6 +22,8 @@ export interface ItineraryFormValues {
   title: string;
   description: string;
   location: string;
+  lat: number | null;
+  lng: number | null;
   category: ItineraryCategory;
   cost: string;
   link: string;
@@ -43,6 +46,8 @@ export function ItineraryItemForm({
     title: initial?.title ?? "",
     description: initial?.description ?? "",
     location: initial?.location ?? "",
+    lat: initial?.lat ?? null,
+    lng: initial?.lng ?? null,
     category: initial?.category ?? "activity",
     cost: initial?.cost != null ? String(initial.cost) : "",
     link: initial?.link ?? "",
@@ -121,10 +126,11 @@ export function ItineraryItemForm({
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <Label htmlFor="item-location">Location</Label>
-          <Input
+          <PlaceAutocomplete
             id="item-location"
             value={values.location}
-            onChange={(e) => setValues((v) => ({ ...v, location: e.target.value }))}
+            onChange={(text) => setValues((v) => ({ ...v, location: text, lat: null, lng: null }))}
+            onPlaceSelect={(place) => setValues((v) => ({ ...v, location: place.description, lat: place.lat, lng: place.lng }))}
             placeholder="Where"
           />
         </div>

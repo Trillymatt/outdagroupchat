@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Check, Copy, ExternalLink, Heart, Pencil, Trash2, Users } from "lucide-react";
+import { Check, Copy, ExternalLink, Heart, MapPin, Pencil, Trash2, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AvatarStack } from "@/components/ui/avatar";
@@ -125,6 +125,13 @@ export function LodgingCard({
       )}
 
       {option.notes && <p className="text-sm text-ink-soft">{option.notes}</p>}
+
+      {option.location && (
+        <p className="flex items-center gap-1 text-xs text-ink-soft">
+          <MapPin className="h-3 w-3" />
+          {option.location}
+        </p>
+      )}
 
       {option.url && <LinkPreview url={option.url} fallbackLabel="View listing" />}
 

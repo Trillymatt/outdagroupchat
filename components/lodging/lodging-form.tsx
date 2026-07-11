@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import { Input, Textarea, Label, FieldError } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { PlaceAutocomplete } from "@/components/ui/place-autocomplete";
 import { cn } from "@/lib/utils/cn";
 import type { LodgingOption } from "@/lib/types/trip";
 
@@ -13,6 +14,9 @@ export interface LodgingFormValues {
   url: string;
   price_per_night: string;
   notes: string;
+  location: string;
+  lat: number | null;
+  lng: number | null;
   confirmation_number: string;
   booking_url: string;
   booking_notes: string;
@@ -24,6 +28,9 @@ function toFormValues(option?: LodgingOption): LodgingFormValues {
     url: option?.url ?? "",
     price_per_night: option?.price_per_night != null ? String(option.price_per_night) : "",
     notes: option?.notes ?? "",
+    location: option?.location ?? "",
+    lat: option?.lat ?? null,
+    lng: option?.lng ?? null,
     confirmation_number: option?.confirmation_number ?? "",
     booking_url: option?.booking_url ?? "",
     booking_notes: option?.booking_notes ?? "",
@@ -99,6 +106,16 @@ export function LodgingForm({
           value={values.price_per_night}
           onChange={(e) => setValues((v) => ({ ...v, price_per_night: e.target.value }))}
           placeholder="0.00"
+        />
+      </div>
+      <div>
+        <Label htmlFor="lodging-location">Location (optional)</Label>
+        <PlaceAutocomplete
+          id="lodging-location"
+          value={values.location}
+          onChange={(text) => setValues((v) => ({ ...v, location: text, lat: null, lng: null }))}
+          onPlaceSelect={(place) => setValues((v) => ({ ...v, location: place.description, lat: place.lat, lng: place.lng }))}
+          placeholder="Pin it on the map for nearby food suggestions"
         />
       </div>
       <div>

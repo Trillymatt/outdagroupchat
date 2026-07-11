@@ -527,6 +527,9 @@ export type Database = {
           created_at: string
           created_by: string
           id: string
+          lat: number | null
+          lng: number | null
+          location: string | null
           name: string
           notes: string | null
           price_per_night: number | null
@@ -542,6 +545,9 @@ export type Database = {
           created_at?: string
           created_by: string
           id?: string
+          lat?: number | null
+          lng?: number | null
+          location?: string | null
           name: string
           notes?: string | null
           price_per_night?: number | null
@@ -557,6 +563,9 @@ export type Database = {
           created_at?: string
           created_by?: string
           id?: string
+          lat?: number | null
+          lng?: number | null
+          location?: string | null
           name?: string
           notes?: string | null
           price_per_night?: number | null
@@ -1017,6 +1026,8 @@ export type Database = {
           created_by: string
           dates_locked: boolean
           destination: string | null
+          destination_lat: number | null
+          destination_lng: number | null
           end_date: string | null
           id: string
           invite_code: string
@@ -1030,6 +1041,8 @@ export type Database = {
           created_by: string
           dates_locked?: boolean
           destination?: string | null
+          destination_lat?: number | null
+          destination_lng?: number | null
           end_date?: string | null
           id?: string
           invite_code?: string
@@ -1043,6 +1056,8 @@ export type Database = {
           created_by?: string
           dates_locked?: boolean
           destination?: string | null
+          destination_lat?: number | null
+          destination_lng?: number | null
           end_date?: string | null
           id?: string
           invite_code?: string
@@ -1082,6 +1097,8 @@ export type Database = {
           created_by: string
           dates_locked: boolean
           destination: string | null
+          destination_lat: number | null
+          destination_lng: number | null
           end_date: string | null
           id: string
           invite_code: string
@@ -1108,6 +1125,8 @@ export type Database = {
           created_by: string
           dates_locked: boolean
           destination: string | null
+          destination_lat: number | null
+          destination_lng: number | null
           end_date: string | null
           id: string
           invite_code: string
@@ -1275,8 +1294,8 @@ export const Constants = {
   },
 } as const
 
-export type ItineraryCategory = "activity" | "food" | "transport" | "lodging" | "other";
-export type FlightStatus = "searching" | "booked" | "opted_out";
-export type ExpenseCategory = "lodging" | "food" | "transport" | "activity" | "other";
-export type CommentTargetType = "lodging" | "restaurant" | "itinerary" | "flight_suggestion";
 
+export type ItineraryCategory = "activity" | "food" | "transport" | "lodging" | "other"
+export type FlightStatus = "searching" | "booked" | "opted_out"
+export type ExpenseCategory = "lodging" | "food" | "transport" | "activity" | "other"
+export type CommentTargetType = "lodging" | "restaurant" | "itinerary" | "flight_suggestion"

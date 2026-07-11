@@ -10,6 +10,8 @@ export type TripFormState = { error?: string } | undefined;
 export async function createTripAction(_prevState: TripFormState, formData: FormData): Promise<TripFormState> {
   const name = String(formData.get("name") ?? "").trim();
   const destination = String(formData.get("destination") ?? "").trim();
+  const destinationLat = Number(formData.get("destination_lat") ?? "");
+  const destinationLng = Number(formData.get("destination_lng") ?? "");
   const startDate = String(formData.get("start_date") ?? "").trim();
   const endDate = String(formData.get("end_date") ?? "").trim();
 
@@ -24,6 +26,10 @@ export async function createTripAction(_prevState: TripFormState, formData: Form
   });
 
   if (error || !data) return { error: error?.message ?? "Could not create the trip." };
+
+  if (Number.isFinite(destinationLat) && Number.isFinite(destinationLng) && (destinationLat || destinationLng)) {
+    await supabase.from("trips").update({ destination_lat: destinationLat, destination_lng: destinationLng }).eq("id", data.id);
+  }
 
   if (destination) {
     const photo = await searchCityPhoto(destination);

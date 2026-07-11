@@ -7,11 +7,14 @@ import { Card } from "@/components/ui/card";
 import { Input, Label } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CoverPhotoField } from "@/components/trips/cover-photo-field";
+import { PlaceAutocomplete } from "@/components/ui/place-autocomplete";
 import { formatDateRange } from "@/lib/utils/dates";
 
 export interface TripDetailsValues {
   name: string;
   destination: string | null;
+  destination_lat?: number | null;
+  destination_lng?: number | null;
   start_date: string | null;
   end_date: string | null;
   cover_image: string | null;
@@ -42,6 +45,8 @@ export function TripDetailsCard({ tripId, initial }: { tripId: string; initial: 
       .update({
         name: draft.name,
         destination: draft.destination || null,
+        destination_lat: draft.destination_lat ?? null,
+        destination_lng: draft.destination_lng ?? null,
         start_date: draft.start_date || null,
         end_date: draft.end_date || null,
       })
@@ -102,10 +107,13 @@ export function TripDetailsCard({ tripId, initial }: { tripId: string; initial: 
       </div>
       <div>
         <Label htmlFor="trip-destination">Destination</Label>
-        <Input
+        <PlaceAutocomplete
           id="trip-destination"
           value={draft.destination ?? ""}
-          onChange={(e) => setDraft((v) => ({ ...v, destination: e.target.value }))}
+          onChange={(text) => setDraft((v) => ({ ...v, destination: text, destination_lat: null, destination_lng: null }))}
+          onPlaceSelect={(place) =>
+            setDraft((v) => ({ ...v, destination: place.description, destination_lat: place.lat, destination_lng: place.lng }))
+          }
         />
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

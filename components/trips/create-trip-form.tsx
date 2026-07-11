@@ -1,15 +1,17 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { createTripAction, type TripFormState } from "@/lib/actions/trips";
 import { Card } from "@/components/ui/card";
 import { Input, Label, FieldError } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { PlaceAutocomplete } from "@/components/ui/place-autocomplete";
 
 const initialState: TripFormState = undefined;
 
 export function CreateTripForm() {
   const [state, formAction, pending] = useActionState(createTripAction, initialState);
+  const [destination, setDestination] = useState({ text: "", lat: null as number | null, lng: null as number | null });
 
   return (
     <Card className="max-w-lg space-y-4">
@@ -20,7 +22,16 @@ export function CreateTripForm() {
         </div>
         <div>
           <Label htmlFor="destination">Destination</Label>
-          <Input id="destination" name="destination" placeholder="Lisbon, Portugal" />
+          <PlaceAutocomplete
+            id="destination"
+            name="destination"
+            value={destination.text}
+            onChange={(text) => setDestination({ text, lat: null, lng: null })}
+            onPlaceSelect={(place) => setDestination({ text: place.description, lat: place.lat, lng: place.lng })}
+            placeholder="Lisbon, Portugal"
+          />
+          <input type="hidden" name="destination_lat" value={destination.lat ?? ""} />
+          <input type="hidden" name="destination_lng" value={destination.lng ?? ""} />
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
