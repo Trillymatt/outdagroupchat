@@ -34,6 +34,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          summary: string
+          trip_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          summary: string
+          trip_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          summary?: string
+          trip_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_events_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_suggestions: {
         Row: {
           content: Json
@@ -79,45 +121,138 @@ export type Database = {
           },
         ]
       }
-      flight_suggestion_votes: {
+      comments: {
         Row: {
+          body: string
           created_at: string
-          flight_suggestion_id: string
+          id: string
+          target_id: string
+          target_type: CommentTargetType
           trip_id: string
           user_id: string
         }
         Insert: {
+          body: string
           created_at?: string
-          flight_suggestion_id: string
+          id?: string
+          target_id: string
+          target_type: CommentTargetType
           trip_id: string
           user_id: string
         }
         Update: {
+          body?: string
           created_at?: string
-          flight_suggestion_id?: string
+          id?: string
+          target_id?: string
+          target_type?: CommentTargetType
           trip_id?: string
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "flight_suggestion_votes_flight_suggestion_id_fkey"
-            columns: ["flight_suggestion_id"]
-            isOneToOne: false
-            referencedRelation: "flight_suggestions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "flight_suggestion_votes_trip_id_fkey"
+            foreignKeyName: "comments_trip_id_fkey"
             columns: ["trip_id"]
             isOneToOne: false
             referencedRelation: "trips"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "flight_suggestion_votes_user_id_fkey"
+            foreignKeyName: "comments_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expense_splits: {
+        Row: {
+          amount: number
+          expense_id: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          expense_id: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          expense_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_splits_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_splits_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expenses: {
+        Row: {
+          amount: number
+          category: ExpenseCategory | null
+          created_at: string
+          created_by: string
+          description: string
+          expense_date: string
+          id: string
+          paid_by: string
+          trip_id: string
+        }
+        Insert: {
+          amount: number
+          category?: ExpenseCategory | null
+          created_at?: string
+          created_by?: string
+          description: string
+          expense_date?: string
+          id?: string
+          paid_by: string
+          trip_id: string
+        }
+        Update: {
+          amount?: number
+          category?: ExpenseCategory | null
+          created_at?: string
+          created_by?: string
+          description?: string
+          expense_date?: string
+          id?: string
+          paid_by?: string
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_paid_by_fkey"
+            columns: ["paid_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
             referencedColumns: ["id"]
           },
         ]
@@ -200,6 +335,7 @@ export type Database = {
           arrival_airport: string | null
           arrival_time: string | null
           booking_link: string | null
+          confirmation_number: string | null
           created_at: string
           departure_airport: string | null
           departure_time: string | null
@@ -218,6 +354,7 @@ export type Database = {
           arrival_airport?: string | null
           arrival_time?: string | null
           booking_link?: string | null
+          confirmation_number?: string | null
           created_at?: string
           departure_airport?: string | null
           departure_time?: string | null
@@ -236,6 +373,7 @@ export type Database = {
           arrival_airport?: string | null
           arrival_time?: string | null
           booking_link?: string | null
+          confirmation_number?: string | null
           created_at?: string
           departure_airport?: string | null
           departure_time?: string | null
@@ -377,6 +515,9 @@ export type Database = {
       }
       lodging_options: {
         Row: {
+          booking_notes: string | null
+          booking_url: string | null
+          confirmation_number: string | null
           created_at: string
           created_by: string
           id: string
@@ -389,6 +530,9 @@ export type Database = {
           url: string | null
         }
         Insert: {
+          booking_notes?: string | null
+          booking_url?: string | null
+          confirmation_number?: string | null
           created_at?: string
           created_by: string
           id?: string
@@ -401,6 +545,9 @@ export type Database = {
           url?: string | null
         }
         Update: {
+          booking_notes?: string | null
+          booking_url?: string | null
+          confirmation_number?: string | null
           created_at?: string
           created_by?: string
           id?: string
@@ -703,91 +850,6 @@ export type Database = {
           },
           {
             foreignKeyName: "trip_date_availability_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      trip_date_proposals: {
-        Row: {
-          created_at: string
-          end_date: string
-          id: string
-          proposed_by: string
-          start_date: string
-          trip_id: string
-        }
-        Insert: {
-          created_at?: string
-          end_date: string
-          id?: string
-          proposed_by: string
-          start_date: string
-          trip_id: string
-        }
-        Update: {
-          created_at?: string
-          end_date?: string
-          id?: string
-          proposed_by?: string
-          start_date?: string
-          trip_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "trip_date_proposals_proposed_by_fkey"
-            columns: ["proposed_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "trip_date_proposals_trip_id_fkey"
-            columns: ["trip_id"]
-            isOneToOne: false
-            referencedRelation: "trips"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      trip_date_votes: {
-        Row: {
-          created_at: string
-          proposal_id: string
-          trip_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          proposal_id: string
-          trip_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          proposal_id?: string
-          trip_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "trip_date_votes_proposal_id_fkey"
-            columns: ["proposal_id"]
-            isOneToOne: false
-            referencedRelation: "trip_date_proposals"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "trip_date_votes_trip_id_fkey"
-            columns: ["trip_id"]
-            isOneToOne: false
-            referencedRelation: "trips"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "trip_date_votes_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -1102,6 +1164,8 @@ export type CompositeTypes<
 // re-add after every `supabase gen types` regeneration.
 export type ItineraryCategory = "activity" | "food" | "transport" | "lodging" | "other";
 export type FlightStatus = "searching" | "booked" | "opted_out";
+export type ExpenseCategory = "lodging" | "food" | "transport" | "activity" | "other";
+export type CommentTargetType = "lodging" | "restaurant" | "itinerary" | "flight_suggestion";
 
 export const Constants = {
   graphql_public: {
@@ -1111,4 +1175,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-

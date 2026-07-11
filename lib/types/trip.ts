@@ -10,6 +10,11 @@ export type Restaurant = Database["public"]["Tables"]["restaurants"]["Row"];
 export type FlightSuggestion = Database["public"]["Tables"]["flight_suggestions"]["Row"];
 export type AiSuggestion = Database["public"]["Tables"]["ai_suggestions"]["Row"];
 export type PackingItem = Database["public"]["Tables"]["packing_items"]["Row"];
+export type Expense = Database["public"]["Tables"]["expenses"]["Row"];
+export type ExpenseSplit = Database["public"]["Tables"]["expense_splits"]["Row"];
+// Named TripComment (not Comment) to avoid colliding with the DOM `Comment` type.
+export type TripComment = Database["public"]["Tables"]["comments"]["Row"];
+export type ActivityEvent = Database["public"]["Tables"]["activity_events"]["Row"];
 
 export type TripMemberWithProfile = TripMember & {
   profile: Pick<Profile, "id" | "name" | "avatar_color">;

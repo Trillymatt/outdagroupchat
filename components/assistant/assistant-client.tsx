@@ -7,7 +7,6 @@ import type { AiSuggestion, PackingItem } from "@/lib/types/trip";
 import { ItinerarySuggestionsSection } from "./itinerary-suggestions-section";
 import { RestaurantSuggestionsSection } from "./restaurant-suggestions-section";
 import { PackingListSection } from "./packing-list-section";
-import { BudgetCheckSection } from "./budget-check-section";
 import { CatchMeUpSection } from "./catch-me-up-section";
 
 export interface PackingCheckRow {
@@ -47,10 +46,6 @@ export function AssistantClient({
     () => suggestions.filter((s) => s.type === "restaurant" && s.status === "suggested"),
     [suggestions],
   );
-  const budgetChecks = useMemo(
-    () => suggestions.filter((s) => s.type === "budget").sort((a, b) => b.created_at.localeCompare(a.created_at)),
-    [suggestions],
-  );
   const catchMeUps = useMemo(
     () => suggestions.filter((s) => s.type === "catch_me_up").sort((a, b) => b.created_at.localeCompare(a.created_at)),
     [suggestions],
@@ -86,7 +81,6 @@ export function AssistantClient({
         packingChecks={packingChecks}
         setPackingChecks={setPackingChecks}
       />
-      <BudgetCheckSection tripId={tripId} latest={budgetChecks[0]} setSuggestions={setSuggestions} />
       <CatchMeUpSection tripId={tripId} latest={catchMeUps[0]} setSuggestions={setSuggestions} />
     </div>
   );

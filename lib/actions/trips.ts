@@ -26,12 +26,13 @@ export async function createTripAction(_prevState: TripFormState, formData: Form
   redirect(`/trips/${data.id}/overview`);
 }
 
-export async function joinTripAction(_prevState: TripFormState, formData: FormData): Promise<TripFormState> {
-  const code = String(formData.get("invite_code") ?? "").trim();
-  if (!code) return { error: "Enter an invite code." };
+// Shared join logic used by the form action below and the one-tap /join/[code] page.
+export async function joinTripByCode(code: string): Promise<{ tripId: string } | { error: string }> {
+  const inviteCode = code.trim();
+  if (!inviteCode) return { error: "Enter an invite code." };
 
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("join_trip_by_code", { p_invite_code: code });
+  const { data, error } = await supabase.rpc("join_trip_by_code", { p_invite_code: inviteCode });
 
   if (error || !data) return { error: "That invite code doesn't match a trip." };
 
@@ -43,5 +44,11 @@ export async function joinTripAction(_prevState: TripFormState, formData: FormDa
     await notifyOptedInMembers(data.id, `${profile?.name ?? "Someone"} just joined "${data.name}" on Tandem.`, user.id);
   }
 
-  redirect(`/trips/${data.id}/overview`);
+  return { tripId: data.id };
+}
+
+export async function joinTripAction(_prevState: TripFormState, formData: FormData): Promise<TripFormState> {
+  const result = await joinTripByCode(String(formData.get("invite_code") ?? ""));
+  if ("error" in result) return { error: result.error };
+  redirect(`/trips/${result.tripId}/overview`);
 }

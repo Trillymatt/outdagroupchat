@@ -15,6 +15,9 @@ import type { ItineraryItem } from "@/lib/types/trip";
 
 function SortableItem({
   item,
+  tripId,
+  currentUserId,
+  authorsById,
   authorName,
   authorColor,
   voteCount,
@@ -26,6 +29,9 @@ function SortableItem({
   onDelete,
 }: {
   item: ItineraryItem;
+  tripId: string;
+  currentUserId: string;
+  authorsById: Map<string, { name: string; color?: string }>;
   authorName?: string;
   authorColor?: string;
   voteCount: number;
@@ -42,6 +48,9 @@ function SortableItem({
     <ItineraryItemCard
       ref={setNodeRef}
       item={item}
+      tripId={tripId}
+      currentUserId={currentUserId}
+      authorsById={authorsById}
       authorName={authorName}
       authorColor={authorColor}
       voteCount={voteCount}
@@ -64,6 +73,7 @@ function SortableItem({
 
 export function ItineraryDayColumn({
   day,
+  tripId,
   items,
   authorLookup,
   currentUserId,
@@ -76,6 +86,7 @@ export function ItineraryDayColumn({
   onDelete,
 }: {
   day: string;
+  tripId: string;
   items: ItineraryItem[];
   authorLookup: Map<string, { name: string; color?: string }>;
   currentUserId: string;
@@ -169,6 +180,9 @@ export function ItineraryDayColumn({
                       <SortableItem
                         key={item.id}
                         item={item}
+                        tripId={tripId}
+                        currentUserId={currentUserId}
+                        authorsById={authorLookup}
                         authorName={authorLookup.get(item.created_by)?.name}
                         authorColor={authorLookup.get(item.created_by)?.color}
                         voteCount={itemVotes.length}

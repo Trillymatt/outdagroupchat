@@ -16,7 +16,7 @@ export default async function FlightsPage({ params }: { params: Promise<{ tripId
   } = await supabase.auth.getUser();
   if (!user) notFound();
 
-  const [{ data: trip }, { data: flights }, { data: members }, { data: suggestions }, { data: suggestionVotes }] = await Promise.all([
+  const [{ data: trip }, { data: flights }, { data: members }, { data: suggestions }] = await Promise.all([
     supabase.from("trips").select("destination, start_date, end_date").eq("id", tripId).single(),
     supabase.from("flights").select("*").eq("trip_id", tripId),
     supabase
@@ -25,7 +25,6 @@ export default async function FlightsPage({ params }: { params: Promise<{ tripId
       .eq("trip_id", tripId)
       .order("joined_at", { ascending: true }),
     supabase.from("flight_suggestions").select("*").eq("trip_id", tripId).order("created_at", { ascending: true }),
-    supabase.from("flight_suggestion_votes").select("*").eq("trip_id", tripId),
   ]);
 
   if (!trip) notFound();
@@ -64,7 +63,6 @@ export default async function FlightsPage({ params }: { params: Promise<{ tripId
         currentUserId={user.id}
         canEditOthers={canEditOthers}
         initialSuggestions={(suggestions ?? []) as FlightSuggestion[]}
-        initialVotes={suggestionVotes ?? []}
         memberLookup={memberLookup}
         startDate={trip.start_date}
         endDate={trip.end_date}

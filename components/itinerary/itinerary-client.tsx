@@ -134,6 +134,7 @@ export function ItineraryClient({
         <ItineraryDayColumn
           key={day}
           day={day}
+          tripId={tripId}
           items={itemsByDay.get(day) ?? []}
           authorLookup={authorLookup}
           currentUserId={currentUserId}

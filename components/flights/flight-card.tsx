@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ExternalLink, Pencil, Plane } from "lucide-react";
+import { Check, Copy, ExternalLink, Pencil, Plane } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -50,7 +50,15 @@ export function FlightCard({
 }) {
   const status = flight?.status ?? "searching";
   const [unlocked, setUnlocked] = useState(false);
+  const [copied, setCopied] = useState(false);
   const editable = isSelf && (status !== "booked" || unlocked);
+
+  async function copyConfirmation() {
+    if (!flight?.confirmation_number) return;
+    await navigator.clipboard.writeText(flight.confirmation_number);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
 
   return (
     <Card className="space-y-3">
@@ -116,6 +124,18 @@ export function FlightCard({
           )}
           {flight?.price != null && <p className="font-medium text-ink">${flight.price}</p>}
           {flight?.notes && <p className="text-ink-soft">{flight.notes}</p>}
+          {flight?.confirmation_number && (
+            <button
+              type="button"
+              onClick={copyConfirmation}
+              className="inline-flex items-center gap-1.5 text-sm text-ink transition-colors hover:text-green-dark"
+              title="Copy confirmation number"
+            >
+              <span className="text-ink-soft">Conf#</span>
+              <span className="font-mono">{flight.confirmation_number}</span>
+              {copied ? <Check className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3 text-ink-soft/60" />}
+            </button>
+          )}
           <div className="flex flex-wrap items-center gap-3 pt-1">
             {flight?.booking_link && (
               <a

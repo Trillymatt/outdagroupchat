@@ -120,6 +120,9 @@ export function FoodClient({
                 <FoodCard
                   key={restaurant.id}
                   restaurant={restaurant}
+                  tripId={tripId}
+                  currentUserId={currentUserId}
+                  authorsById={memberLookup}
                   voteCount={restaurantVotes.length}
                   votedByMe={restaurantVotes.some((v) => v.user_id === currentUserId)}
                   voters={restaurantVotes.map((v) => memberLookup.get(v.user_id) ?? { name: "Someone" })}

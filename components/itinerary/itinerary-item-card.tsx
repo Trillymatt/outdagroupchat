@@ -6,6 +6,7 @@ import { ExternalLink, GripVertical, Heart, MapPin, Pencil, Trash2, UtensilsCros
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarStack } from "@/components/ui/avatar";
+import { CommentThread } from "@/components/comments/comment-thread";
 import { cn } from "@/lib/utils/cn";
 import type { ItineraryItem } from "@/lib/types/trip";
 import type { ItineraryCategory } from "@/lib/supabase/database.types";
@@ -31,6 +32,9 @@ export const ItineraryItemCard = forwardRef<
   HTMLDivElement,
   {
     item: ItineraryItem;
+    tripId: string;
+    currentUserId: string;
+    authorsById: Map<string, { name: string; color?: string }>;
     authorName?: string;
     authorColor?: string;
     voteCount: number;
@@ -45,7 +49,7 @@ export const ItineraryItemCard = forwardRef<
     isDragging?: boolean;
   }
 >(function ItineraryItemCard(
-  { item, authorName, authorColor, voteCount, votedByMe, voters, canEdit, onToggleVote, onEdit, onDelete, dragHandleProps, style, isDragging },
+  { item, tripId, currentUserId, authorsById, authorName, authorColor, voteCount, votedByMe, voters, canEdit, onToggleVote, onEdit, onDelete, dragHandleProps, style, isDragging },
   ref,
 ) {
   const meta = categoryMeta[item.category];
@@ -113,6 +117,15 @@ export const ItineraryItemCard = forwardRef<
             </span>
           )}
           {item.cost != null && <span className="text-xs font-medium text-ink-soft">${item.cost.toFixed(2)}</span>}
+        </div>
+        <div className="pt-0.5">
+          <CommentThread
+            tripId={tripId}
+            targetType="itinerary"
+            targetId={item.id}
+            currentUserId={currentUserId}
+            authorsById={authorsById}
+          />
         </div>
       </div>
 

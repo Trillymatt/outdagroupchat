@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { TripDetailsCard } from "@/components/trips/trip-details-card";
-import { DateProposals } from "@/components/trips/date-proposals";
 import { DateAvailability } from "@/components/trips/date-availability";
 import { InviteCodeCard } from "@/components/trips/invite-code-card";
 import { MemberList, type MemberRow } from "@/components/trips/member-list";
@@ -34,20 +33,8 @@ export default async function TripOverviewPage({ params }: { params: Promise<{ t
   const isOwner = members.some((m) => m.user_id === user.id && m.role === "owner");
   const datesLocked = Boolean(trip.start_date && trip.end_date);
 
-  let proposals: { id: string; trip_id: string; start_date: string; end_date: string; proposed_by: string; created_at: string }[] = [];
-  let votes: { proposal_id: string; user_id: string; trip_id: string; created_at: string }[] = [];
-
-  if (!datesLocked) {
-    const [{ data: proposalRows }, { data: voteRows }] = await Promise.all([
-      supabase.from("trip_date_proposals").select("*").eq("trip_id", tripId).order("created_at", { ascending: true }),
-      supabase.from("trip_date_votes").select("*").eq("trip_id", tripId),
-    ]);
-    proposals = proposalRows ?? [];
-    votes = voteRows ?? [];
-  }
-
   const { data: availabilityRows } = await supabase.from("trip_date_availability").select("*").eq("trip_id", tripId);
-  const availabilityWindow = computeAvailabilityWindow(proposals, { start_date: trip.start_date, end_date: trip.end_date });
+  const availabilityWindow = computeAvailabilityWindow({ start_date: trip.start_date, end_date: trip.end_date });
   const memberList = members.map((m) => ({ userId: m.user_id, name: m.profiles?.name ?? m.display_name, color: m.profiles?.avatar_color }));
 
   return (
@@ -57,9 +44,6 @@ export default async function TripOverviewPage({ params }: { params: Promise<{ t
           tripId={tripId}
           initial={{ name: trip.name, destination: trip.destination, start_date: trip.start_date, end_date: trip.end_date }}
         />
-        {!datesLocked && (
-          <DateProposals tripId={tripId} currentUserId={user.id} initialProposals={proposals} initialVotes={votes} />
-        )}
         <DateAvailability
           tripId={tripId}
           currentUserId={user.id}
@@ -67,6 +51,8 @@ export default async function TripOverviewPage({ params }: { params: Promise<{ t
           members={memberList}
           windowStart={availabilityWindow.start}
           windowEnd={availabilityWindow.end}
+          lockedStart={datesLocked ? trip.start_date : null}
+          lockedEnd={datesLocked ? trip.end_date : null}
         />
         {isOwner && <DangerZone tripId={tripId} />}
       </div>

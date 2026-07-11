@@ -5,10 +5,14 @@ import { ExternalLink, Heart, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AvatarStack } from "@/components/ui/avatar";
+import { CommentThread } from "@/components/comments/comment-thread";
 import type { Restaurant } from "@/lib/types/trip";
 
 export function FoodCard({
   restaurant,
+  tripId,
+  currentUserId,
+  authorsById,
   voteCount,
   votedByMe,
   voters,
@@ -18,6 +22,9 @@ export function FoodCard({
   onDelete,
 }: {
   restaurant: Restaurant;
+  tripId: string;
+  currentUserId: string;
+  authorsById: Map<string, { name: string; color?: string }>;
   voteCount: number;
   votedByMe: boolean;
   voters: { name: string; color?: string }[];
@@ -75,6 +82,14 @@ export function FoodCard({
         </div>
         {authorName && <span className="text-xs text-ink-soft">added by {authorName}</span>}
       </div>
+
+      <CommentThread
+        tripId={tripId}
+        targetType="restaurant"
+        targetId={restaurant.id}
+        currentUserId={currentUserId}
+        authorsById={authorsById}
+      />
     </motion.div>
   );
 }

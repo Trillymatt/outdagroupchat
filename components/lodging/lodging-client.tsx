@@ -68,6 +68,9 @@ export function LodgingClient({
         url: values.url.trim() || null,
         price_per_night: values.price_per_night ? Number(values.price_per_night) : null,
         notes: values.notes.trim() || null,
+        confirmation_number: values.confirmation_number.trim() || null,
+        booking_url: values.booking_url.trim() || null,
+        booking_notes: values.booking_notes.trim() || null,
         created_by: currentUserId,
       })
       .select()
@@ -111,6 +114,9 @@ export function LodgingClient({
       <LodgingCard
         key={option.id}
         option={option}
+        tripId={tripId}
+        currentUserId={currentUserId}
+        authorsById={memberLookup}
         voteCount={optionVotes.length}
         votedByMe={optionVotes.some((v) => v.user_id === currentUserId)}
         voters={optionVotes.map((v) => memberLookup.get(v.user_id) ?? { name: "Someone" })}

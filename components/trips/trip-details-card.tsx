@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { CalendarPlus } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Input, Label } from "@/components/ui/input";
@@ -71,11 +72,23 @@ export function TripDetailsCard({ tripId, initial }: { tripId: string; initial: 
           />
         </div>
       </div>
-      <div className="flex items-center gap-3">
-        <Button onClick={save} disabled={saving}>
-          {saving ? "Saving…" : "Save"}
-        </Button>
-        {saved && <span className="text-sm font-medium text-success">Saved</span>}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Button onClick={save} disabled={saving}>
+            {saving ? "Saving…" : "Save"}
+          </Button>
+          {saved && <span className="text-sm font-medium text-success">Saved</span>}
+        </div>
+        {values.start_date && values.end_date && (
+          <a
+            href={`/api/trips/${tripId}/calendar`}
+            download
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-green-dark hover:underline"
+          >
+            <CalendarPlus className="h-3.5 w-3.5" />
+            Add to calendar (.ics)
+          </a>
+        )}
       </div>
     </Card>
   );
