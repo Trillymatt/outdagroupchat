@@ -920,6 +920,58 @@ export type Database = {
           },
         ]
       }
+      trip_join_requests: {
+        Row: {
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          requested_at: string
+          status: string
+          trip_id: string
+          user_id: string
+        }
+        Insert: {
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          requested_at?: string
+          status?: string
+          trip_id: string
+          user_id: string
+        }
+        Update: {
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          requested_at?: string
+          status?: string
+          trip_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_join_requests_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_join_requests_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_join_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trip_legs: {
         Row: {
           city: string
@@ -1080,6 +1132,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_join_request: {
+        Args: {
+          p_can_edit_flights?: boolean
+          p_can_edit_food?: boolean
+          p_can_edit_itinerary?: boolean
+          p_can_edit_lodging?: boolean
+          p_request_id: string
+        }
+        Returns: undefined
+      }
       can_edit_category: {
         Args: { category: string; target_trip_id: string }
         Returns: boolean
@@ -1114,6 +1176,7 @@ export type Database = {
         }
       }
       delete_trip: { Args: { p_trip_id: string }; Returns: undefined }
+      deny_join_request: { Args: { p_request_id: string }; Returns: undefined }
       gen_invite_code: { Args: never; Returns: string }
       is_trip_member: { Args: { target_trip_id: string }; Returns: boolean }
       is_trip_owner: { Args: { target_trip_id: string }; Returns: boolean }
@@ -1142,9 +1205,22 @@ export type Database = {
         }
       }
       leave_trip: { Args: { p_trip_id: string }; Returns: undefined }
+      log_activity: {
+        Args: { p_event_type: string; p_summary: string; p_trip_id: string }
+        Returns: undefined
+      }
       remove_trip_member: {
         Args: { p_trip_id: string; p_user_id: string }
         Returns: undefined
+      }
+      request_to_join: {
+        Args: { p_invite_code: string }
+        Returns: {
+          out_already_member: boolean
+          out_status: string
+          out_trip_id: string
+          out_trip_name: string
+        }[]
       }
       set_trip_member_permission: {
         Args: {

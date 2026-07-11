@@ -22,3 +22,16 @@ export async function notifyOptedInMembers(tripId: string, message: string, excl
     console.error("notifyOptedInMembers failed", err);
   }
 }
+
+/** Best-effort single-recipient notify — for events that concern one person, not the whole trip (join requests, decisions). */
+export async function notifyUser(userId: string, message: string) {
+  try {
+    const supabase = await createClient();
+    const { data: profile } = await supabase.from("profiles").select("phone_number, sms_opt_in").eq("id", userId).single();
+    if (profile?.sms_opt_in && profile.phone_number) {
+      await sendSms(profile.phone_number, message);
+    }
+  } catch (err) {
+    console.error("notifyUser failed", err);
+  }
+}

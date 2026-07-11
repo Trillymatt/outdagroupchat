@@ -5,6 +5,7 @@ import { TripDetailsCard } from "@/components/trips/trip-details-card";
 import { TripLegsCard } from "@/components/trips/trip-legs-card";
 import { DateAvailability } from "@/components/trips/date-availability";
 import { TripExportsCard } from "@/components/trips/trip-exports-card";
+import { ActivityFeed } from "@/components/trips/activity-feed";
 import type { MemberRow } from "@/components/trips/member-list";
 import { computeAvailabilityWindow } from "@/lib/utils/availability-window";
 
@@ -33,9 +34,10 @@ export default async function TripOverviewPage({ params }: { params: Promise<{ t
   const isOwner = members.some((m) => m.user_id === user.id && m.role === "owner");
   const datesLocked = Boolean(trip.start_date && trip.end_date);
 
-  const [{ data: availabilityRows }, { data: legs }] = await Promise.all([
+  const [{ data: availabilityRows }, { data: legs }, { data: activityEvents }] = await Promise.all([
     supabase.from("trip_date_availability").select("*").eq("trip_id", tripId),
     supabase.from("trip_legs").select("*").eq("trip_id", tripId).order("start_date", { ascending: true }),
+    supabase.from("activity_events").select("*").eq("trip_id", tripId).order("created_at", { ascending: false }).limit(20),
   ]);
   const availabilityWindow = computeAvailabilityWindow({ start_date: trip.start_date, end_date: trip.end_date });
   const memberList = members.map((m) => ({ userId: m.user_id, name: m.profiles?.name ?? m.display_name, color: m.profiles?.avatar_color }));
@@ -70,6 +72,7 @@ export default async function TripOverviewPage({ params }: { params: Promise<{ t
       </div>
       <div className="space-y-6">
         <TripExportsCard tripId={tripId} />
+        <ActivityFeed tripId={tripId} initialEvents={activityEvents ?? []} />
       </div>
     </div>
   );
