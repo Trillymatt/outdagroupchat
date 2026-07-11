@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { TripDetailsCard } from "@/components/trips/trip-details-card";
+import { TripLegsCard } from "@/components/trips/trip-legs-card";
 import { DateAvailability } from "@/components/trips/date-availability";
 import { InviteCodeCard } from "@/components/trips/invite-code-card";
 import { TripExportsCard } from "@/components/trips/trip-exports-card";
@@ -34,7 +35,10 @@ export default async function TripOverviewPage({ params }: { params: Promise<{ t
   const isOwner = members.some((m) => m.user_id === user.id && m.role === "owner");
   const datesLocked = Boolean(trip.start_date && trip.end_date);
 
-  const { data: availabilityRows } = await supabase.from("trip_date_availability").select("*").eq("trip_id", tripId);
+  const [{ data: availabilityRows }, { data: legs }] = await Promise.all([
+    supabase.from("trip_date_availability").select("*").eq("trip_id", tripId),
+    supabase.from("trip_legs").select("*").eq("trip_id", tripId).order("start_date", { ascending: true }),
+  ]);
   const availabilityWindow = computeAvailabilityWindow({ start_date: trip.start_date, end_date: trip.end_date });
   const memberList = members.map((m) => ({ userId: m.user_id, name: m.profiles?.name ?? m.display_name, color: m.profiles?.avatar_color }));
 
@@ -45,6 +49,7 @@ export default async function TripOverviewPage({ params }: { params: Promise<{ t
           tripId={tripId}
           initial={{ name: trip.name, destination: trip.destination, start_date: trip.start_date, end_date: trip.end_date }}
         />
+        <TripLegsCard tripId={tripId} currentUserId={user.id} initialLegs={legs ?? []} />
         <DateAvailability
           tripId={tripId}
           currentUserId={user.id}

@@ -911,6 +911,54 @@ export type Database = {
           },
         ]
       }
+      trip_legs: {
+        Row: {
+          city: string
+          cover_image: string | null
+          created_at: string
+          created_by: string
+          end_date: string
+          id: string
+          start_date: string
+          trip_id: string
+        }
+        Insert: {
+          city: string
+          cover_image?: string | null
+          created_at?: string
+          created_by: string
+          end_date: string
+          id?: string
+          start_date: string
+          trip_id: string
+        }
+        Update: {
+          city?: string
+          cover_image?: string | null
+          created_at?: string
+          created_by?: string
+          end_date?: string
+          id?: string
+          start_date?: string
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_legs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_legs_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trip_members: {
         Row: {
           can_edit_flights: boolean

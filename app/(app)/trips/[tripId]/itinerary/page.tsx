@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ItineraryClient } from "@/components/itinerary/itinerary-client";
-import type { ItineraryItem } from "@/lib/types/trip";
+import type { ItineraryItem, TripLeg } from "@/lib/types/trip";
 
 export const metadata: Metadata = { title: "Itinerary — Tandem" };
 
@@ -26,11 +26,12 @@ export default async function ItineraryPage({ params }: { params: Promise<{ trip
   } = await supabase.auth.getUser();
   if (!user) notFound();
 
-  const [{ data: trip }, { data: items }, { data: votes }, { data: members }] = await Promise.all([
+  const [{ data: trip }, { data: items }, { data: votes }, { data: members }, { data: legs }] = await Promise.all([
     supabase.from("trips").select("start_date, end_date").eq("id", tripId).single(),
     supabase.from("itinerary_items").select("*").eq("trip_id", tripId).order("day", { ascending: true }).order("position", { ascending: true }),
     supabase.from("itinerary_votes").select("*").eq("trip_id", tripId),
     supabase.from("trip_members").select("user_id, display_name, role, can_edit_itinerary, profiles(name, avatar_color)").eq("trip_id", tripId),
+    supabase.from("trip_legs").select("*").eq("trip_id", tripId).order("start_date", { ascending: true }),
   ]);
 
   if (!trip) notFound();
@@ -39,12 +40,13 @@ export default async function ItineraryPage({ params }: { params: Promise<{ trip
   const canEditOthers = me?.role === "owner" || me?.can_edit_itinerary === true;
 
   const itemDays = new Set((items ?? []).map((i) => i.day));
+  const legDays = new Set((legs ?? []).flatMap((leg) => eachDay(leg.start_date, leg.end_date)));
   const today = new Date().toISOString().slice(0, 10);
 
   const days =
     trip.start_date && trip.end_date
-      ? eachDay(trip.start_date, trip.end_date)
-      : Array.from(new Set([...itemDays, today])).sort();
+      ? Array.from(new Set([...eachDay(trip.start_date, trip.end_date), ...legDays])).sort()
+      : Array.from(new Set([...itemDays, ...legDays, today])).sort();
 
   const authorLookup = new Map(
     (members ?? []).map((m) => {
@@ -67,6 +69,7 @@ export default async function ItineraryPage({ params }: { params: Promise<{ trip
         initialVotes={votes ?? []}
         days={days}
         authorLookup={authorLookup}
+        initialLegs={(legs ?? []) as TripLeg[]}
       />
     </div>
   );

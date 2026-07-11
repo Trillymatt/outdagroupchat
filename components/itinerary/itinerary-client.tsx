@@ -8,7 +8,8 @@ import { useRealtimeList, useRealtimeJoinList } from "@/lib/hooks/use-realtime-l
 import { Button } from "@/components/ui/button";
 import { ItineraryDayColumn } from "@/components/itinerary/itinerary-day-column";
 import type { ItineraryFormValues } from "@/components/itinerary/itinerary-item-form";
-import type { ItineraryItem } from "@/lib/types/trip";
+import type { ItineraryItem, TripLeg } from "@/lib/types/trip";
+import { formatDateRange } from "@/lib/utils/dates";
 
 // Leaflet touches `window` at import time, so the map can only load in the browser
 const ItineraryMap = dynamic(() => import("@/components/itinerary/itinerary-map").then((m) => m.ItineraryMap), {
@@ -46,6 +47,7 @@ export function ItineraryClient({
   initialVotes,
   days,
   authorLookup,
+  initialLegs,
 }: {
   tripId: string;
   currentUserId: string;
@@ -54,7 +56,9 @@ export function ItineraryClient({
   initialVotes: ItineraryVoteRow[];
   days: string[];
   authorLookup: Map<string, { name: string; color?: string }>;
+  initialLegs: TripLeg[];
 }) {
+  const [legs] = useRealtimeList<TripLeg>("trip_legs", tripId, initialLegs);
   const [items, setItems] = useRealtimeList<ItineraryItem>("itinerary_items", tripId, initialItems);
   const [votes, setVotes] = useRealtimeJoinList<ItineraryVoteRow>(
     "itinerary_votes",
@@ -82,6 +86,24 @@ export function ItineraryClient({
   }, [items, days]);
 
   const allDays = useMemo(() => Array.from(itemsByDay.keys()).sort(), [itemsByDay]);
+
+  // Groups days under whichever leg's date range contains them (legs are
+  // trip metadata, not stored per-item — see 20260711010000_trip_legs.sql).
+  // With no legs, this collapses to a single unlabeled group so the board
+  // looks exactly like it did before legs existed.
+  const dayGroups = useMemo(() => {
+    if (legs.length === 0) return [{ leg: null as TripLeg | null, days: allDays }];
+    const sortedLegs = [...legs].sort((a, b) => a.start_date.localeCompare(b.start_date));
+    const groups: { leg: TripLeg | null; days: string[] }[] = sortedLegs.map((leg) => ({ leg, days: [] }));
+    const unassigned: string[] = [];
+    for (const day of allDays) {
+      const group = groups.find((g) => g.leg && day >= g.leg.start_date && day <= g.leg.end_date);
+      if (group) group.days.push(day);
+      else unassigned.push(day);
+    }
+    if (unassigned.length > 0) groups.push({ leg: null, days: unassigned });
+    return groups;
+  }, [legs, allDays]);
 
   async function handleAdd(day: string, values: ItineraryFormValues) {
     const supabase = createClient();
@@ -183,23 +205,34 @@ export function ItineraryClient({
       {view === "map" ? (
         <ItineraryMap items={items} days={allDays} />
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {allDays.map((day) => (
-            <ItineraryDayColumn
-              key={day}
-              day={day}
-              tripId={tripId}
-              items={itemsByDay.get(day) ?? []}
-              authorLookup={authorLookup}
-              currentUserId={currentUserId}
-              canEditOthers={canEditOthers}
-              votesByItem={votesByItem}
-              onToggleVote={toggleVote}
-              onAdd={(values) => handleAdd(day, values)}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onReorder={handleReorder}
-            />
+        <div className="space-y-8">
+          {dayGroups.map((group) => (
+            <div key={group.leg?.id ?? "unassigned"} className="space-y-3">
+              {legs.length > 0 && (
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-ink-soft">
+                  {group.leg ? `${group.leg.city} · ${formatDateRange(group.leg.start_date, group.leg.end_date)}` : "Other days"}
+                </h3>
+              )}
+              <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                {group.days.map((day) => (
+                  <ItineraryDayColumn
+                    key={day}
+                    day={day}
+                    tripId={tripId}
+                    items={itemsByDay.get(day) ?? []}
+                    authorLookup={authorLookup}
+                    currentUserId={currentUserId}
+                    canEditOthers={canEditOthers}
+                    votesByItem={votesByItem}
+                    onToggleVote={toggleVote}
+                    onAdd={(values) => handleAdd(day, values)}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    onReorder={handleReorder}
+                  />
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       )}
