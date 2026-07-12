@@ -1,10 +1,11 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { AnimatedTabs, type TabItem } from "@/components/ui/tabs";
 
 export function TripTabsNav({ tripId }: { tripId: string }) {
   const pathname = usePathname();
+  const router = useRouter();
   const base = `/trips/${tripId}`;
 
   const items: TabItem[] = [
@@ -23,8 +24,22 @@ export function TripTabsNav({ tripId }: { tripId: string }) {
   const active = items.find((item) => pathname?.startsWith(item.href))?.key ?? "overview";
 
   return (
-    <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-      <AnimatedTabs items={items} activeKey={active} layoutId={`trip-tabs-${tripId}`} />
-    </div>
+    <>
+      <label className="block sm:hidden">
+        <span className="sr-only">Trip section</span>
+        <select
+          value={items.find((item) => item.key === active)?.href}
+          onChange={(event) => router.push(event.target.value)}
+          className="w-full rounded-2xl border border-line bg-surface px-4 py-3 text-base font-medium text-ink outline-none focus:border-green focus:ring-4 focus:ring-green/15"
+        >
+          {items.map((item) => (
+            <option key={item.key} value={item.href}>{item.label}</option>
+          ))}
+        </select>
+      </label>
+      <div className="hidden sm:block">
+        <AnimatedTabs items={items} activeKey={active} layoutId={`trip-tabs-${tripId}`} />
+      </div>
+    </>
   );
 }

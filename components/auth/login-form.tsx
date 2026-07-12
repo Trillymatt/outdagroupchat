@@ -33,7 +33,7 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
       </form>
       <p className="text-center text-sm text-ink-soft">
         New to Tandem?{" "}
-        <Link href={signupHref} className="font-medium text-green-dark">
+        <Link href={signupHref} className="inline-flex min-h-10 items-center font-medium text-green-dark sm:min-h-0">
           Create an account
         </Link>
       </p>

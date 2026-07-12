@@ -27,8 +27,17 @@ function numberedIcon(color: string, label: number) {
 export function ItineraryMap({ items, days }: { items: ItineraryItem[]; days: string[] }) {
   const requested = useRef(new Set<string>());
   const [activeMarker, setActiveMarker] = useState<string | null>(null);
+  const [authFailed, setAuthFailed] = useState(
+    () => Boolean((window as typeof window & { __googleMapsAuthFailed?: boolean }).__googleMapsAuthFailed),
+  );
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-  const { isLoaded } = useJsApiLoader({ id: "tandem-google-maps", googleMapsApiKey: apiKey ?? "", libraries: LIBRARIES });
+  const { isLoaded, loadError } = useJsApiLoader({ id: "tandem-google-maps", googleMapsApiKey: apiKey ?? "", libraries: LIBRARIES });
+
+  useEffect(() => {
+    const handleFailure = () => setAuthFailed(true);
+    window.addEventListener("google-maps-auth-failure", handleFailure);
+    return () => window.removeEventListener("google-maps-auth-failure", handleFailure);
+  }, []);
 
   // Items created before the map existed (or whose geocode failed mid-save) get
   // coords lazily here; realtime UPDATE events drop the pins in as they resolve.
@@ -84,9 +93,29 @@ export function ItineraryMap({ items, days }: { items: ItineraryItem[]; days: st
     [points],
   );
 
+  if (!apiKey) {
+    return (
+      <div className="flex h-80 flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-line px-4 text-center sm:h-[420px]">
+        <p className="font-medium text-ink">Map key is missing</p>
+        <p className="max-w-sm text-sm text-ink-soft">Add NEXT_PUBLIC_GOOGLE_MAPS_API_KEY and restart the app.</p>
+      </div>
+    );
+  }
+
+  if (authFailed || loadError) {
+    return (
+      <div className="flex h-80 flex-col items-center justify-center gap-1 rounded-2xl border border-danger/30 bg-danger/5 px-4 text-center sm:h-[420px]">
+        <p className="font-medium text-ink">Google rejected this map key</p>
+        <p className="max-w-md text-sm text-ink-soft">
+          Enable Maps JavaScript API and Places API, attach billing, and allow this site&apos;s URL in the key&apos;s HTTP referrer restrictions.
+        </p>
+      </div>
+    );
+  }
+
   if (points.length === 0) {
     return (
-      <div className="flex h-[420px] flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-line text-center">
+      <div className="flex h-80 flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-line px-4 text-center sm:h-[420px]">
         <p className="font-medium text-ink">Nothing to map yet</p>
         <p className="max-w-sm text-sm text-ink-soft">
           {unlocated > 0
@@ -97,21 +126,14 @@ export function ItineraryMap({ items, days }: { items: ItineraryItem[]; days: st
     );
   }
 
-  if (!apiKey || !isLoaded) {
-    return (
-      <div className="flex h-[420px] flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-line text-center">
-        <p className="font-medium text-ink">Map isn&apos;t configured yet</p>
-        <p className="max-w-sm text-sm text-ink-soft">Add a Google Maps API key to see itinerary stops plotted on a map.</p>
-      </div>
-    );
-  }
+  if (!isLoaded) return <div className="h-80 animate-pulse rounded-2xl border border-line bg-ink/[0.03] sm:h-[420px]" />;
 
   const activeItem = located.find((i) => i.id === activeMarker) ?? null;
 
   return (
     <div className="space-y-3">
-      <div className="overflow-hidden rounded-2xl border border-line">
-        <GoogleMap mapContainerStyle={{ height: 480, width: "100%" }} onLoad={onMapLoad} options={{ streetViewControl: false, mapTypeControl: false }}>
+      <div className="h-[360px] overflow-hidden rounded-2xl border border-line sm:h-[480px]">
+        <GoogleMap mapContainerStyle={{ height: "100%", width: "100%" }} onLoad={onMapLoad} options={{ streetViewControl: false, mapTypeControl: false }}>
           {Array.from(byDay.entries()).map(([day, dayItems]) => {
             const color = dayColor(dayIndex.get(day) ?? 0);
             return (

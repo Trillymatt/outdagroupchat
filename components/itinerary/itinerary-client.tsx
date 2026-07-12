@@ -15,7 +15,7 @@ import { formatDateRange } from "@/lib/utils/dates";
 // The Google Maps JS API touches `window` at load time, so the map can only load in the browser
 const ItineraryMap = dynamic(() => import("@/components/itinerary/itinerary-map").then((m) => m.ItineraryMap), {
   ssr: false,
-  loading: () => <div className="h-[420px] animate-pulse rounded-2xl border border-line bg-ink/[0.03]" />,
+  loading: () => <div className="h-80 animate-pulse rounded-2xl border border-line bg-ink/[0.03] sm:h-[420px]" />,
 });
 
 interface ItineraryVoteRow {
@@ -231,6 +231,7 @@ export function ItineraryClient({
             suggestions={itinerarySuggestions}
             setSuggestions={setSuggestions}
             onDismiss={dismissSuggestion}
+            days={allDays}
           />
           {dayGroups.map((group) => (
             <div key={group.leg?.id ?? "unassigned"} className="space-y-3">

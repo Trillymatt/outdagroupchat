@@ -28,6 +28,13 @@ const THEME_INIT_SCRIPT = `
 })();
 `;
 
+const GOOGLE_MAPS_AUTH_SCRIPT = `
+window.gm_authFailure = function () {
+  window.__googleMapsAuthFailed = true;
+  window.dispatchEvent(new Event('google-maps-auth-failure'));
+};
+`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -42,6 +49,9 @@ export default function RootLayout({
       <head>
         <Script id="theme-init" strategy="beforeInteractive">
           {THEME_INIT_SCRIPT}
+        </Script>
+        <Script id="google-maps-auth-listener" strategy="beforeInteractive">
+          {GOOGLE_MAPS_AUTH_SCRIPT}
         </Script>
       </head>
       <body className="min-h-full flex flex-col bg-paper text-ink">{children}</body>

@@ -10,7 +10,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     <>
       <LoginForm redirectTo={redirect} />
       <p className="mt-4 text-center text-sm">
-        <Link href="/forgot-password" className="text-ink-soft transition-colors hover:text-ink">
+        <Link href="/forgot-password" className="inline-flex min-h-10 items-center text-ink-soft transition-colors hover:text-ink sm:min-h-0">
           Forgot password?
         </Link>
       </p>

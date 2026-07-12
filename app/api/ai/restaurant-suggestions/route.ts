@@ -11,6 +11,7 @@ const ResponseSchema = z.object({
       z.object({
         name: z.string(),
         cuisine: z.string(),
+        location: z.string().describe("A concise street address or neighborhood in the destination"),
         notes: z.string().describe("One or two sentences on why it's recommended"),
       }),
     )
@@ -56,7 +57,8 @@ Destination: ${trip.destination ?? "unspecified"}
 Cuisines the group has already shown interest in (most upvoted first): ${topCuisines.length > 0 ? topCuisines.join(", ") : "none yet"}
 Restaurants already on the list (don't repeat these): ${existingNames.length > 0 ? existingNames.join(", ") : "none yet"}
 
-Suggest up to 5 restaurants or food experiences in the destination worth trying. Weight toward the group's
+Suggest up to 5 restaurants or food experiences in the destination worth trying. Include a useful location
+(street address when confident, otherwise the neighborhood). Weight toward the group's
 already-shown cuisine preferences when there are any, but also include at least one or two different ideas so
 the list doesn't feel repetitive. Prefer specific, real, well-known places over generic filler.`;
 

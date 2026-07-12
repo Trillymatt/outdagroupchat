@@ -37,12 +37,17 @@ TWILIO_ACCOUNT_SID=
 TWILIO_AUTH_TOKEN=
 TWILIO_FROM_NUMBER=
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=
 AMADEUS_CLIENT_ID=
 AMADEUS_CLIENT_SECRET=
 ```
 
 - `ANTHROPIC_API_KEY` powers every AI feature (itinerary/restaurant suggestions, packing list, budget check,
   catch-me-up). Optionally set `ANTHROPIC_MODEL` to override the default model (`claude-opus-4-8`).
+- `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` powers the itinerary map and place autocomplete. In Google Cloud, enable
+  the Maps JavaScript API and Places API, attach billing, and restrict the key to your site with an HTTP
+  referrer such as `https://your-domain.example/*`. Add `http://localhost:3000/*` for local development.
+  Because this is a `NEXT_PUBLIC_` variable, it is embedded during `next build`; redeploy after changing it.
 - Twilio vars are optional — if unset, `sendSms` logs a warning and no-ops instead of throwing, so the rest of
   the app works fine without SMS configured. Get these from the [Twilio Console](https://console.twilio.com):
   an Account SID, an Auth Token, and a phone number capable of sending SMS.
@@ -90,8 +95,12 @@ member joining).
 ### Vercel
 
 Push to a Git repo and import it in Vercel, or run `vercel`. Add the same environment variables from step 2 in
-the Vercel project settings. No other configuration is needed — there's no build step beyond the standard
-`next build`.
+the Vercel project settings. Set `NEXT_PUBLIC_SITE_URL` to the production URL, without a trailing slash, and
+make sure `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` is available to the Production environment before building. No
+other configuration is needed — there's no build step beyond the standard `next build`.
+
+After the first deployment, add the final Vercel or custom domain to the Google key's HTTP referrer allowlist
+and redeploy if you changed the key or any other `NEXT_PUBLIC_` variable.
 
 ### Railway
 

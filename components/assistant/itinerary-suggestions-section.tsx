@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import type { AiSuggestion } from "@/lib/types/trip";
 import type { ItineraryCategory } from "@/lib/supabase/database.types";
 import { formatDay } from "@/lib/utils/dates";
+import { Select } from "@/components/ui/input";
 
 interface ItinerarySuggestionContent {
   day: string;
@@ -26,15 +27,18 @@ export function ItinerarySuggestionsSection({
   suggestions,
   setSuggestions,
   onDismiss,
+  days,
 }: {
   tripId: string;
   currentUserId: string;
   suggestions: AiSuggestion[];
   setSuggestions: Dispatch<SetStateAction<AiSuggestion[]>>;
   onDismiss: (id: string) => void;
+  days?: string[];
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedDays, setSelectedDays] = useState<Record<string, string>>({});
 
   async function generate() {
     setLoading(true);
@@ -66,14 +70,14 @@ export function ItinerarySuggestionsSection({
     await Promise.all([
       supabase.from("itinerary_items").insert({
         trip_id: tripId,
-        day: content.day,
+        day: selectedDays[suggestion.id] ?? content.day,
         time: content.time,
         title: content.title,
         description: content.description,
         location: content.location,
         category: content.category,
         created_by: currentUserId,
-        position: Date.now(),
+        position: Date.parse(suggestion.created_at),
       }),
       supabase.from("ai_suggestions").update({ status: "accepted" }).eq("id", suggestion.id),
     ]);
@@ -81,8 +85,8 @@ export function ItinerarySuggestionsSection({
 
   return (
     <AiSectionCard
-      title="Itinerary suggestions"
-      description="Claude spots gaps in your schedule and suggests things to fill them."
+      title="Potential things to do"
+      description="Keep ideas here until you choose the day they belong on."
       actionLabel={suggestions.length > 0 ? "Suggest more" : "Suggest activities"}
       onGenerate={generate}
       loading={loading}
@@ -98,7 +102,7 @@ export function ItinerarySuggestionsSection({
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              className="rounded-2xl border border-line bg-paper p-4"
+              className="rounded-2xl border border-line bg-paper p-3 sm:p-4"
             >
               <div className="flex flex-wrap items-center gap-2 text-xs text-ink-soft">
                 <Badge tone="green">{formatDay(content.day)}</Badge>
@@ -108,9 +112,19 @@ export function ItinerarySuggestionsSection({
               <p className="mt-1.5 font-medium text-ink">{content.title}</p>
               <p className="mt-0.5 text-sm text-ink-soft">{content.description}</p>
               <p className="mt-1.5 text-xs italic text-ink-soft/80">{content.rationale}</p>
-              <div className="mt-3 flex gap-2">
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+                {days && days.length > 0 && (
+                  <Select
+                    aria-label={`Day for ${content.title}`}
+                    value={selectedDays[s.id] ?? content.day}
+                    onChange={(event) => setSelectedDays((current) => ({ ...current, [s.id]: event.target.value }))}
+                    className="sm:max-w-48"
+                  >
+                    {days.map((day) => <option key={day} value={day}>{formatDay(day)}</option>)}
+                  </Select>
+                )}
                 <Button size="sm" onClick={() => accept(s)}>
-                  Add to itinerary
+                  Add to day
                 </Button>
                 <Button size="sm" variant="ghost" onClick={() => onDismiss(s.id)}>
                   Dismiss

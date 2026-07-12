@@ -4,6 +4,17 @@ import { createClient } from "@/lib/supabase/server";
 import { FoodClient } from "@/components/food/food-client";
 import type { Restaurant, AiSuggestion } from "@/lib/types/trip";
 
+function eachDay(start: string, end: string): string[] {
+  const days: string[] = [];
+  const cursor = new Date(`${start}T00:00:00Z`);
+  const last = new Date(`${end}T00:00:00Z`);
+  while (cursor <= last) {
+    days.push(cursor.toISOString().slice(0, 10));
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  return days;
+}
+
 export const metadata: Metadata = { title: "Food — Tandem" };
 
 export default async function FoodPage({ params }: { params: Promise<{ tripId: string }> }) {
@@ -15,7 +26,8 @@ export default async function FoodPage({ params }: { params: Promise<{ tripId: s
   } = await supabase.auth.getUser();
   if (!user) notFound();
 
-  const [{ data: restaurants }, { data: votes }, { data: members }, { data: suggestions }] = await Promise.all([
+  const [{ data: trip }, { data: restaurants }, { data: votes }, { data: members }, { data: suggestions }] = await Promise.all([
+    supabase.from("trips").select("destination, start_date, end_date").eq("id", tripId).single(),
     supabase.from("restaurants").select("*").eq("trip_id", tripId).order("created_at", { ascending: true }),
     supabase.from("restaurant_votes").select("*").eq("trip_id", tripId),
     supabase.from("trip_members").select("user_id, display_name, role, can_edit_food, profiles(name, avatar_color)").eq("trip_id", tripId),
@@ -31,6 +43,8 @@ export default async function FoodPage({ params }: { params: Promise<{ tripId: s
 
   const me = (members ?? []).find((m) => m.user_id === user.id);
   const canEditOthers = me?.role === "owner" || me?.can_edit_food === true;
+  const today = new Date().toISOString().slice(0, 10);
+  const days = trip?.start_date && trip.end_date ? eachDay(trip.start_date, trip.end_date) : [today];
 
   return (
     <div className="space-y-6">
@@ -46,6 +60,8 @@ export default async function FoodPage({ params }: { params: Promise<{ tripId: s
         initialVotes={votes ?? []}
         memberLookup={memberLookup}
         initialSuggestions={(suggestions ?? []) as AiSuggestion[]}
+        days={days}
+        destination={trip?.destination}
       />
     </div>
   );

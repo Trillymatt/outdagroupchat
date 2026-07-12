@@ -26,14 +26,14 @@ export function AiSectionCard({
     <motion.section
       layout
       className={cn(
-        "space-y-4 rounded-3xl border border-line bg-surface p-5",
+        "space-y-3 rounded-3xl border border-line bg-surface p-4 sm:space-y-4 sm:p-5",
         "relative overflow-hidden",
       )}
     >
       <div className="pointer-events-none absolute inset-x-0 top-0 h-0.5 bg-sync-gradient" />
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sync-gradient text-white">
+          <div className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sync-gradient text-white sm:flex">
             <Sparkles size={16} />
           </div>
           <div>
@@ -41,7 +41,7 @@ export function AiSectionCard({
             <p className="text-sm text-ink-soft">{description}</p>
           </div>
         </div>
-        <Button size="sm" onClick={onGenerate} disabled={loading}>
+        <Button size="sm" className="w-full sm:w-auto" onClick={onGenerate} disabled={loading}>
           {loading ? "Thinking…" : actionLabel}
         </Button>
       </div>

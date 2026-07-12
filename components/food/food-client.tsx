@@ -12,6 +12,7 @@ import { FoodCard } from "@/components/food/food-card";
 import { FoodForm, type FoodFormValues } from "@/components/food/food-form";
 import { RestaurantSuggestionsSection } from "@/components/assistant/restaurant-suggestions-section";
 import type { Restaurant, AiSuggestion } from "@/lib/types/trip";
+import { appleMapsSearchUrl } from "@/lib/utils/maps";
 
 interface RestaurantVoteRow {
   restaurant_id: string;
@@ -28,6 +29,8 @@ export function FoodClient({
   initialVotes,
   memberLookup,
   initialSuggestions,
+  days,
+  destination,
 }: {
   tripId: string;
   currentUserId: string;
@@ -36,6 +39,8 @@ export function FoodClient({
   initialVotes: RestaurantVoteRow[];
   memberLookup: Map<string, { name: string; color?: string }>;
   initialSuggestions: AiSuggestion[];
+  days: string[];
+  destination?: string | null;
 }) {
   const [restaurants, setRestaurants] = useRealtimeList<Restaurant>("restaurants", tripId, initialRestaurants);
   const [votes, setVotes] = useRealtimeJoinList<RestaurantVoteRow>(
@@ -109,6 +114,23 @@ export function FoodClient({
     await supabase.from("restaurants").delete().eq("id", restaurantId);
   }
 
+  async function scheduleRestaurant(restaurant: Restaurant, day: string, time: string): Promise<boolean> {
+    const supabase = createClient();
+    const { error } = await supabase.from("itinerary_items").insert({
+      trip_id: tripId,
+      day,
+      time: time || null,
+      title: restaurant.name,
+      description: restaurant.notes,
+      location: [restaurant.name, destination].filter(Boolean).join(", "),
+      category: "food",
+      link: restaurant.url ?? appleMapsSearchUrl(restaurant.name, destination),
+      created_by: currentUserId,
+      position: Date.parse(restaurant.created_at),
+    });
+    return !error;
+  }
+
   return (
     <div className="space-y-6">
       <RestaurantSuggestionsSection
@@ -152,6 +174,9 @@ export function FoodClient({
                   canEdit={restaurant.created_by === currentUserId || canEditOthers}
                   onToggleVote={() => toggleVote(restaurant.id)}
                   onDelete={() => handleDelete(restaurant.id)}
+                  days={days}
+                  onSchedule={(day, time) => scheduleRestaurant(restaurant, day, time)}
+                  destination={destination}
                 />
               );
             })}
