@@ -51,8 +51,9 @@ export function CatchMeUpSection({
       onGenerate={generate}
       loading={loading}
       error={error}
+      hasContent={Boolean(content)}
+      contentLabel="latest recap"
     >
-      {!content && <p className="text-sm text-ink-soft">No summary yet.</p>}
       {content && (
         <div className="space-y-3">
           <p className="text-sm text-ink">{content.summary}</p>

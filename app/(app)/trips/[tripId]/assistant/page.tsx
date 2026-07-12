@@ -21,10 +21,10 @@ export default async function AssistantPage({ params }: { params: Promise<{ trip
   ]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Assistant</h1>
-        <p className="text-sm text-ink-soft">Claude-powered suggestions for this trip — accept what's useful, dismiss the rest.</p>
+        <p className="text-sm text-ink-soft">Optional helpers for planning faster. Open only what you need.</p>
       </div>
       <AssistantClient
         tripId={tripId}

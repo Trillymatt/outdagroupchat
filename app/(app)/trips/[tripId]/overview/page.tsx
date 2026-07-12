@@ -43,8 +43,8 @@ export default async function TripOverviewPage({ params }: { params: Promise<{ t
   const memberList = members.map((m) => ({ userId: m.user_id, name: m.profiles?.name ?? m.display_name, color: m.profiles?.avatar_color }));
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-      <div className="space-y-6">
+    <div className="grid gap-4 sm:gap-6 lg:grid-cols-[2fr_1fr]">
+      <div className="space-y-4 sm:space-y-6">
         <TripDetailsCard
           tripId={tripId}
           initial={{
@@ -70,7 +70,7 @@ export default async function TripOverviewPage({ params }: { params: Promise<{ t
           isOwner={isOwner}
         />
       </div>
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         <TripExportsCard tripId={tripId} />
         <ActivityFeed tripId={tripId} initialEvents={activityEvents ?? []} />
       </div>

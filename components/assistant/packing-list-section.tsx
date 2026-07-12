@@ -93,10 +93,11 @@ export function PackingListSection({
       onGenerate={generate}
       loading={loading}
       error={error}
+      hasContent={grouped.length > 0}
+      contentLabel={`${packingItems.length} ${packingItems.length === 1 ? "item" : "items"}`}
     >
       {tripType && <p className="text-xs text-ink-soft">Looks like a {tripType} trip.</p>}
-      {grouped.length === 0 && <p className="text-sm text-ink-soft">No packing list yet.</p>}
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2">
         {grouped.map(([category, items]) => (
           <div key={category}>
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-soft">{category}</p>

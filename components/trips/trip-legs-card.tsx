@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRealtimeList } from "@/lib/hooks/use-realtime-list";
 import { Card } from "@/components/ui/card";
@@ -29,6 +29,7 @@ async function suggestCoverPhoto(legId: string, city: string) {
 
 export function TripLegsCard({ tripId, currentUserId, initialLegs }: { tripId: string; currentUserId: string; initialLegs: TripLeg[] }) {
   const [legs, setLegs] = useRealtimeList<TripLeg>("trip_legs", tripId, initialLegs);
+  const [editing, setEditing] = useState(false);
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState(emptyDraft);
 
@@ -69,21 +70,38 @@ export function TripLegsCard({ tripId, currentUserId, initialLegs }: { tripId: s
     await createClient().from("trip_legs").update({ cover_image: url }).eq("id", legId);
   }
 
+  function toggleEditing() {
+    if (editing) {
+      setAdding(false);
+      setDraft(emptyDraft);
+    }
+    setEditing(!editing);
+  }
+
   return (
     <Card className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
           <h2 className="font-semibold text-ink">Cities</h2>
           <p className="text-xs text-ink-soft">Optional — split a multi-city trip into legs to group the itinerary by city.</p>
         </div>
-        <Button size="sm" variant={adding ? "ghost" : "secondary"} onClick={() => setAdding((v) => !v)}>
-          <Plus className="h-3.5 w-3.5" />
-          {adding ? "Cancel" : "Add city"}
+        <Button size="sm" variant="secondary" onClick={toggleEditing}>
+          <Pencil className="h-3.5 w-3.5" />
+          {editing ? "Done" : "Edit cities"}
         </Button>
       </div>
 
+      {editing && (
+        <div className="flex justify-end">
+          <Button size="sm" variant={adding ? "ghost" : "secondary"} onClick={() => setAdding((v) => !v)}>
+            <Plus className="h-3.5 w-3.5" />
+            {adding ? "Cancel" : "Add city"}
+          </Button>
+        </div>
+      )}
+
       <AnimatePresence initial={false}>
-        {adding && (
+        {editing && adding && (
           <motion.form
             key="add-leg"
             initial={{ opacity: 0, height: 0 }}
@@ -159,7 +177,10 @@ export function TripLegsCard({ tripId, currentUserId, initialLegs }: { tripId: s
                 <button
                   type="button"
                   onClick={() => handleDelete(leg.id)}
-                  className="shrink-0 rounded-lg p-1 text-ink-soft/40 opacity-0 transition-opacity hover:bg-ink/5 hover:text-danger group-hover:opacity-100"
+                  className={editing
+                    ? "flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-ink/5 hover:text-danger sm:min-h-8 sm:min-w-8"
+                    : "hidden"
+                  }
                   aria-label={`Remove ${leg.city}`}
                 >
                   <Trash2 className="h-3.5 w-3.5" />

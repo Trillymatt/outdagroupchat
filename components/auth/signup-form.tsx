@@ -13,6 +13,7 @@ export function SignupForm({ redirectTo }: { redirectTo?: string }) {
   const [state, formAction, pending] = useActionState(signUpAction, initialState);
   const [phone, setPhone] = useState("");
   const loginHref = redirectTo ? `/login?redirect=${encodeURIComponent(redirectTo)}` : "/login";
+  const joiningTrip = redirectTo?.startsWith("/join/") ?? false;
 
   if (state?.message) {
     return (
@@ -28,7 +29,10 @@ export function SignupForm({ redirectTo }: { redirectTo?: string }) {
 
   return (
     <Card className="space-y-5">
-      <h1 className="text-xl font-semibold tracking-tight">Create your account</h1>
+      <div>
+        <h1 className="text-xl font-semibold tracking-tight">{joiningTrip ? "Create an account to join" : "Create your account"}</h1>
+        {joiningTrip && <p className="mt-1 text-sm text-ink-soft">Your invitation is saved and will be waiting after account confirmation.</p>}
+      </div>
       <form action={formAction} className="space-y-4">
         <input type="hidden" name="redirect" value={redirectTo ?? ""} />
         <div>

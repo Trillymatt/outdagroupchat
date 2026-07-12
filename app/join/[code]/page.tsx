@@ -5,8 +5,26 @@ import { createClient } from "@/lib/supabase/server";
 import { requestToJoinByCode } from "@/lib/actions/trips";
 import { Card } from "@/components/ui/card";
 import { LogoMark } from "@/components/ui/logo";
+import { RouteBackdrop } from "@/components/ui/route-line";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
-export const metadata: Metadata = { title: "Join a trip — Tandem" };
+export const metadata: Metadata = {
+  title: "You’re invited to plan a trip — Tandem",
+  description: "Bring the plans out of the group chat — together in Tandem. Sign in or create an account to join the trip.",
+  openGraph: {
+    type: "website",
+    siteName: "Tandem",
+    title: "You’re invited to plan a trip",
+    description: "Bring the plans out of the group chat — together in Tandem.",
+    images: [{ url: "/og-invite.png", width: 1200, height: 630, alt: "You’re invited to plan a trip in Tandem" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "You’re invited to plan a trip",
+    description: "Bring the plans out of the group chat — together in Tandem.",
+    images: ["/og-invite.png"],
+  },
+};
 
 export default async function JoinByLinkPage({ params }: { params: Promise<{ code: string }> }) {
   const { code } = await params;
@@ -17,10 +35,51 @@ export default async function JoinByLinkPage({ params }: { params: Promise<{ cod
     data: { user },
   } = await supabase.auth.getUser();
 
-  // The middleware already bounces logged-out visitors to /login with this
-  // destination preserved, but guard here too in case it's ever bypassed.
   if (!user) {
-    redirect(`/login?redirect=${encodeURIComponent(`/join/${inviteCode}`)}`);
+    const destination = `/join/${inviteCode}`;
+    const loginHref = `/login?redirect=${encodeURIComponent(destination)}`;
+    const signupHref = `/signup?redirect=${encodeURIComponent(destination)}`;
+
+    return (
+      <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-paper px-4 py-12 sm:py-16">
+        <ThemeToggle className="absolute right-4 top-4 z-10" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-40 opacity-40">
+          <RouteBackdrop className="h-full w-full" />
+        </div>
+        <div className="relative flex items-center gap-2 text-lg font-semibold tracking-tight text-ink">
+          <LogoMark size={32} />
+          Tandem
+        </div>
+        <Card className="relative z-10 mt-6 w-full max-w-sm space-y-5 text-center sm:mt-8">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-green-dark">Trip invitation</p>
+            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-ink">You’re invited to plan a trip</h1>
+            <p className="mt-2 text-sm leading-relaxed text-ink-soft">
+              Bring the plans out of the group chat — together in Tandem.
+            </p>
+          </div>
+          <div className="rounded-2xl border border-line bg-paper px-3.5 py-3">
+            <p className="text-xs text-ink-soft">Invite code</p>
+            <p className="mt-1 font-mono text-base font-semibold tracking-[0.24em] text-ink">{inviteCode}</p>
+          </div>
+          <div className="space-y-2.5">
+            <Link
+              href={signupHref}
+              className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-sync-gradient px-4 text-sm font-medium text-white shadow-[0_8px_24px_-8px_rgba(31,95,66,0.5)]"
+            >
+              Create an account to join
+            </Link>
+            <Link
+              href={loginHref}
+              className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-line bg-surface px-4 text-sm font-medium text-ink transition-colors hover:border-green/60"
+            >
+              Sign in to join
+            </Link>
+          </div>
+          <p className="text-xs leading-relaxed text-ink-soft">Your invitation stays attached while you sign in or create your account.</p>
+        </Card>
+      </div>
+    );
   }
 
   const result = await requestToJoinByCode(inviteCode);

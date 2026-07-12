@@ -82,6 +82,8 @@ export function RestaurantSuggestionsSection({
       onGenerate={generate}
       loading={loading}
       error={error}
+      hasContent={suggestions.length > 0}
+      contentLabel={`${suggestions.length} ${suggestions.length === 1 ? "place" : "places"}`}
     >
       <AnimatePresence initial={false}>
         {suggestions.map((s) => {
@@ -93,7 +95,7 @@ export function RestaurantSuggestionsSection({
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              className="rounded-2xl border border-line bg-paper p-3 sm:p-4"
+              className="rounded-xl border border-line bg-paper p-3"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -129,7 +131,6 @@ export function RestaurantSuggestionsSection({
           );
         })}
       </AnimatePresence>
-      {suggestions.length === 0 && <p className="text-sm text-ink-soft">No open suggestions right now.</p>}
     </AiSectionCard>
   );
 }

@@ -2,7 +2,12 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "./database.types";
 
-const PUBLIC_PATHS = ["/login", "/signup", "/auth", "/forgot-password", "/reset-password"];
+const PUBLIC_PATHS = ["/login", "/signup", "/auth", "/forgot-password", "/reset-password", "/join"];
+
+function safeRedirectPath(value: string | null): string | null {
+  if (!value?.startsWith("/") || value.startsWith("//") || value.startsWith("/\\")) return null;
+  return value;
+}
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -45,8 +50,15 @@ export async function updateSession(request: NextRequest) {
 
   if (user && (path === "/login" || path === "/signup")) {
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
-    url.search = "";
+    const destination = safeRedirectPath(request.nextUrl.searchParams.get("redirect"));
+    if (destination) {
+      const destinationUrl = new URL(destination, request.url);
+      url.pathname = destinationUrl.pathname;
+      url.search = destinationUrl.search;
+    } else {
+      url.pathname = "/dashboard";
+      url.search = "";
+    }
     return NextResponse.redirect(url);
   }
 

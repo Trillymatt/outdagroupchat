@@ -14,8 +14,23 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Tandem — plan trips together",
-  description: "Shared mission control for group trips: itinerary, lodging, flights, food, and budget, all in sync.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
+  applicationName: "Tandem",
+  title: "Tandem — group trip planning, together",
+  description: "Bring your group trip out of the group chat. Plan the itinerary, lodging, flights, food, expenses, and decisions together in Tandem.",
+  openGraph: {
+    type: "website",
+    siteName: "Tandem",
+    title: "Tandem — group trip planning, together",
+    description: "Bring your group trip out of the group chat. Keep every plan and decision together in Tandem.",
+    images: [{ url: "/og-invite.png", width: 1200, height: 630, alt: "You’re invited to plan a trip in Tandem" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Tandem — group trip planning, together",
+    description: "Bring your group trip out of the group chat. Keep every plan and decision together in Tandem.",
+    images: ["/og-invite.png"],
+  },
 };
 
 const THEME_INIT_SCRIPT = `

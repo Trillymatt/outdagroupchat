@@ -12,10 +12,14 @@ const initialState: AuthFormState = undefined;
 export function LoginForm({ redirectTo }: { redirectTo?: string }) {
   const [state, formAction, pending] = useActionState(signInAction, initialState);
   const signupHref = redirectTo ? `/signup?redirect=${encodeURIComponent(redirectTo)}` : "/signup";
+  const joiningTrip = redirectTo?.startsWith("/join/") ?? false;
 
   return (
     <Card className="space-y-5">
-      <h1 className="text-xl font-semibold tracking-tight">Welcome back</h1>
+      <div>
+        <h1 className="text-xl font-semibold tracking-tight">{joiningTrip ? "Sign in to join the trip" : "Welcome back"}</h1>
+        {joiningTrip && <p className="mt-1 text-sm text-ink-soft">Your invitation is saved. You’ll continue to it after signing in.</p>}
+      </div>
       <form action={formAction} className="space-y-4">
         <input type="hidden" name="redirect" value={redirectTo ?? ""} />
         <div>
