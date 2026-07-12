@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { normalizeSiteOrigin } from "@/lib/utils/site-url";
 
 export type AuthFormState = { error?: string; message?: string } | undefined;
 
@@ -80,11 +81,11 @@ export async function signOutAction() {
 }
 
 async function siteOrigin(): Promise<string> {
-  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "");
+  if (process.env.NEXT_PUBLIC_SITE_URL) return normalizeSiteOrigin(process.env.NEXT_PUBLIC_SITE_URL);
   const headerList = await headers();
   const host = headerList.get("x-forwarded-host") ?? headerList.get("host") ?? "localhost:3000";
   const proto = headerList.get("x-forwarded-proto") ?? "http";
-  return `${proto}://${host}`;
+  return normalizeSiteOrigin(`${proto}://${host}`);
 }
 
 export async function requestPasswordResetAction(

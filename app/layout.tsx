@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
+import { normalizeSiteOrigin } from "@/lib/utils/site-url";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
+  metadataBase: new URL(normalizeSiteOrigin(process.env.NEXT_PUBLIC_SITE_URL)),
   applicationName: "Tandem",
   title: "Tandem — group trip planning, together",
   description: "Bring your group trip out of the group chat. Plan the itinerary, lodging, flights, food, expenses, and decisions together in Tandem.",
