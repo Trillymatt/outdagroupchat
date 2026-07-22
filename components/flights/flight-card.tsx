@@ -30,7 +30,6 @@ function formatDateTime(iso: string | null) {
 }
 
 export function FlightCard({
-  tripId,
   member,
   flight,
   isSelf,
@@ -40,7 +39,6 @@ export function FlightCard({
   onSave,
   onStatusChange,
 }: {
-  tripId: string;
   member: { userId: string; name: string; color?: string };
   flight: Flight | null;
   isSelf: boolean;
@@ -100,7 +98,6 @@ export function FlightCard({
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <FlightForm
             initial={flightToFormValues(flight)}
-            tripId={tripId}
             defaultDate={startDate}
             onCancel={unlocked ? () => setUnlocked(false) : undefined}
             onSubmit={async (values) => {
