@@ -80,7 +80,6 @@ export function FlightsClient({
         {members.map((member) => (
           <FlightCard
             key={member.userId}
-            tripId={tripId}
             member={member}
             flight={flightByUser.get(member.userId) ?? null}
             isSelf={member.userId === currentUserId}
