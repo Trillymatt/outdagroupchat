@@ -57,10 +57,15 @@ export function FlightsClient({
 
   async function setStatus(status: FlightStatus) {
     const supabase = createClient();
-    const existing = flightByUser.get(currentUserId);
+    // Send only the columns we're changing. Spreading the whole existing row
+    // used to include id/created_at/updated_at, which `authenticated` has no
+    // column-level UPDATE grant on (see 20260710060000_harden_rls_and_integrity),
+    // so the upsert's DO UPDATE was rejected and the status buttons silently
+    // did nothing once a flight row existed. On conflict this updates just the
+    // status and leaves every other saved field untouched.
     const { data, error } = await supabase
       .from("flights")
-      .upsert({ ...(existing ?? {}), trip_id: tripId, user_id: currentUserId, status }, { onConflict: "trip_id,user_id" })
+      .upsert({ trip_id: tripId, user_id: currentUserId, status }, { onConflict: "trip_id,user_id" })
       .select()
       .single();
     if (!error && data) {
@@ -75,6 +80,7 @@ export function FlightsClient({
         {members.map((member) => (
           <FlightCard
             key={member.userId}
+            tripId={tripId}
             member={member}
             flight={flightByUser.get(member.userId) ?? null}
             isSelf={member.userId === currentUserId}

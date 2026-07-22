@@ -15,6 +15,8 @@ export function AiSectionCard({
   error,
   hasContent,
   contentLabel,
+  secondaryAction,
+  formSlot,
   children,
 }: {
   title: string;
@@ -25,6 +27,8 @@ export function AiSectionCard({
   error?: string | null;
   hasContent: boolean;
   contentLabel: string;
+  secondaryAction?: { label: string; onClick: () => void; active?: boolean };
+  formSlot?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const [expanded, setExpanded] = useState(true);
@@ -70,11 +74,22 @@ export function AiSectionCard({
               {expanded ? "Hide" : "Show"}
             </Button>
           )}
+          {secondaryAction && (
+            <Button
+              size="sm"
+              variant={secondaryAction.active ? "primary" : "ghost"}
+              className="px-2.5 text-xs"
+              onClick={secondaryAction.onClick}
+            >
+              {secondaryAction.label}
+            </Button>
+          )}
           <Button size="sm" variant="secondary" className="px-2.5 text-xs" onClick={generate} disabled={loading}>
             {loading ? "Thinking…" : actionLabel}
           </Button>
         </div>
       </div>
+      {formSlot && <div className="mt-3 border-t border-line/70 pt-3">{formSlot}</div>}
       <AnimatePresence initial={false}>
         {(error || (hasContent && expanded)) && (
           <motion.div

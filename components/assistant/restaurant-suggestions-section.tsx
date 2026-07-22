@@ -7,7 +7,9 @@ import { ExternalLink, MapPin } from "lucide-react";
 import { AiSectionCard } from "./ai-section-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input, Label, Textarea } from "@/components/ui/input";
 import type { AiSuggestion } from "@/lib/types/trip";
+import type { Json } from "@/lib/supabase/database.types";
 import { appleMapsSearchUrl } from "@/lib/utils/maps";
 
 interface RestaurantSuggestionContent {
@@ -17,6 +19,8 @@ interface RestaurantSuggestionContent {
   location?: string | null;
   nearLabel?: string | null;
 }
+
+const emptyIdea = { name: "", cuisine: "", notes: "", location: "" };
 
 export function RestaurantSuggestionsSection({
   tripId,
@@ -33,6 +37,32 @@ export function RestaurantSuggestionsSection({
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [idea, setIdea] = useState(emptyIdea);
+  const [savingIdea, setSavingIdea] = useState(false);
+
+  async function addIdea() {
+    if (!idea.name.trim()) return;
+    setSavingIdea(true);
+    const supabase = createClient();
+    const content: RestaurantSuggestionContent = {
+      name: idea.name.trim(),
+      cuisine: idea.cuisine.trim(),
+      notes: idea.notes.trim(),
+      location: idea.location.trim() || null,
+    };
+    const { data, error: insertError } = await supabase
+      .from("ai_suggestions")
+      .insert({ trip_id: tripId, type: "restaurant", status: "suggested", created_by: currentUserId, content: content as unknown as Json })
+      .select()
+      .single();
+    setSavingIdea(false);
+    if (!insertError && data) {
+      setSuggestions((prev) => (prev.some((s) => s.id === data.id) ? prev : [...prev, data as AiSuggestion]));
+      setIdea(emptyIdea);
+      setShowForm(false);
+    }
+  }
 
   async function generate() {
     setLoading(true);
@@ -77,13 +107,55 @@ export function RestaurantSuggestionsSection({
   return (
     <AiSectionCard
       title="Restaurant possibilities"
-      description="Save favorites here first, then choose a day once the group is ready."
+      description="Add your own spots or let AI suggest some — save favorites here, then plan a day for them."
       actionLabel={suggestions.length > 0 ? "Suggest more" : "Suggest restaurants"}
       onGenerate={generate}
       loading={loading}
       error={error}
       hasContent={suggestions.length > 0}
       contentLabel={`${suggestions.length} ${suggestions.length === 1 ? "place" : "places"}`}
+      secondaryAction={{ label: showForm ? "Cancel" : "Add place", onClick: () => setShowForm((v) => !v), active: showForm }}
+      formSlot={
+        showForm ? (
+          <div className="space-y-2.5">
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="food-idea-name">Place</Label>
+                <Input
+                  id="food-idea-name"
+                  value={idea.name}
+                  onChange={(e) => setIdea((v) => ({ ...v, name: e.target.value }))}
+                  placeholder="Trattoria da Enzo"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <Label htmlFor="food-idea-cuisine">Cuisine (optional)</Label>
+                <Input
+                  id="food-idea-cuisine"
+                  value={idea.cuisine}
+                  onChange={(e) => setIdea((v) => ({ ...v, cuisine: e.target.value }))}
+                  placeholder="Italian"
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="food-idea-notes">Notes (optional)</Label>
+              <Textarea
+                id="food-idea-notes"
+                value={idea.notes}
+                onChange={(e) => setIdea((v) => ({ ...v, notes: e.target.value }))}
+                placeholder="Why it's worth a visit"
+              />
+            </div>
+            <div className="flex justify-end">
+              <Button size="sm" onClick={addIdea} disabled={savingIdea || !idea.name.trim()}>
+                {savingIdea ? "Adding…" : "Add possibility"}
+              </Button>
+            </div>
+          </div>
+        ) : null
+      }
     >
       <AnimatePresence initial={false}>
         {suggestions.map((s) => {

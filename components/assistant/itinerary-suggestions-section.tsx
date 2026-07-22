@@ -7,9 +7,9 @@ import { AiSectionCard } from "./ai-section-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { AiSuggestion } from "@/lib/types/trip";
-import type { ItineraryCategory } from "@/lib/supabase/database.types";
+import type { ItineraryCategory, Json } from "@/lib/supabase/database.types";
 import { formatDay } from "@/lib/utils/dates";
-import { Select } from "@/components/ui/input";
+import { Input, Label, Select, Textarea } from "@/components/ui/input";
 
 interface ItinerarySuggestionContent {
   day: string;
@@ -20,6 +20,16 @@ interface ItinerarySuggestionContent {
   category: ItineraryCategory;
   rationale: string;
 }
+
+const categoryOptions: { value: ItineraryCategory; label: string }[] = [
+  { value: "activity", label: "Activity" },
+  { value: "food", label: "Food" },
+  { value: "transport", label: "Transport" },
+  { value: "lodging", label: "Lodging" },
+  { value: "other", label: "Other" },
+];
+
+const emptyIdea = { title: "", description: "", location: "", category: "activity" as ItineraryCategory };
 
 export function ItinerarySuggestionsSection({
   tripId,
@@ -39,6 +49,35 @@ export function ItinerarySuggestionsSection({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedDays, setSelectedDays] = useState<Record<string, string>>({});
+  const [showForm, setShowForm] = useState(false);
+  const [idea, setIdea] = useState(emptyIdea);
+  const [savingIdea, setSavingIdea] = useState(false);
+
+  async function addIdea() {
+    if (!idea.title.trim()) return;
+    setSavingIdea(true);
+    const supabase = createClient();
+    const content: ItinerarySuggestionContent = {
+      day: days?.[0] ?? new Date().toISOString().slice(0, 10),
+      time: null,
+      title: idea.title.trim(),
+      description: idea.description.trim(),
+      location: idea.location.trim() || null,
+      category: idea.category,
+      rationale: "",
+    };
+    const { data, error: insertError } = await supabase
+      .from("ai_suggestions")
+      .insert({ trip_id: tripId, type: "itinerary", status: "suggested", created_by: currentUserId, content: content as unknown as Json })
+      .select()
+      .single();
+    setSavingIdea(false);
+    if (!insertError && data) {
+      setSuggestions((prev) => (prev.some((s) => s.id === data.id) ? prev : [...prev, data as AiSuggestion]));
+      setIdea(emptyIdea);
+      setShowForm(false);
+    }
+  }
 
   async function generate() {
     setLoading(true);
@@ -86,13 +125,69 @@ export function ItinerarySuggestionsSection({
   return (
     <AiSectionCard
       title="Potential things to do"
-      description="Keep ideas here until you choose the day they belong on."
+      description="Add your own ideas or let AI suggest some — then choose the day each one belongs on."
       actionLabel={suggestions.length > 0 ? "Suggest more" : "Suggest activities"}
       onGenerate={generate}
       loading={loading}
       error={error}
       hasContent={suggestions.length > 0}
       contentLabel={`${suggestions.length} ${suggestions.length === 1 ? "idea" : "ideas"}`}
+      secondaryAction={{ label: showForm ? "Cancel" : "Add idea", onClick: () => setShowForm((v) => !v), active: showForm }}
+      formSlot={
+        showForm ? (
+          <div className="space-y-2.5">
+            <div>
+              <Label htmlFor="idea-title">Idea</Label>
+              <Input
+                id="idea-title"
+                value={idea.title}
+                onChange={(e) => setIdea((v) => ({ ...v, title: e.target.value }))}
+                placeholder="Sunset kayak tour"
+                autoFocus
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="idea-location">Location (optional)</Label>
+                <Input
+                  id="idea-location"
+                  value={idea.location}
+                  onChange={(e) => setIdea((v) => ({ ...v, location: e.target.value }))}
+                  placeholder="Where"
+                />
+              </div>
+              <div>
+                <Label htmlFor="idea-category">Category</Label>
+                <Select
+                  id="idea-category"
+                  value={idea.category}
+                  onChange={(e) => setIdea((v) => ({ ...v, category: e.target.value as ItineraryCategory }))}
+                >
+                  {categoryOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="idea-description">Notes (optional)</Label>
+              <Textarea
+                id="idea-description"
+                value={idea.description}
+                onChange={(e) => setIdea((v) => ({ ...v, description: e.target.value }))}
+                placeholder="Anything worth remembering"
+              />
+            </div>
+            <div className="flex justify-end">
+              <Button size="sm" onClick={addIdea} disabled={savingIdea || !idea.title.trim()}>
+                {savingIdea ? "Adding…" : "Add to ideas"}
+              </Button>
+            </div>
+          </div>
+        ) : null
+      }
     >
       <AnimatePresence initial={false}>
         {suggestions.map((s) => {
@@ -113,7 +208,7 @@ export function ItinerarySuggestionsSection({
               </div>
               <p className="mt-1.5 font-medium text-ink">{content.title}</p>
               <p className="mt-0.5 text-sm text-ink-soft">{content.description}</p>
-              <p className="mt-1.5 text-xs italic text-ink-soft/80">{content.rationale}</p>
+              {content.rationale && <p className="mt-1.5 text-xs italic text-ink-soft/80">{content.rationale}</p>}
               <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
                 {days && days.length > 0 && (
                   <Select
