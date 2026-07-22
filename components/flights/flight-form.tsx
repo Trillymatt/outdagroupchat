@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Wand2 } from "lucide-react";
 import { Input, Label, FieldError } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import type { Flight } from "@/lib/types/trip";
@@ -42,16 +43,70 @@ export function flightToFormValues(flight?: Flight | null): FlightFormValues {
 
 export function FlightForm({
   initial,
+  tripId,
+  defaultDate,
   onCancel,
   onSubmit,
 }: {
   initial: FlightFormValues;
+  tripId?: string;
+  defaultDate?: string | null;
   onCancel?: () => void;
   onSubmit: (values: FlightFormValues) => Promise<void>;
 }) {
   const [values, setValues] = useState<FlightFormValues>(initial);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [lookupDate, setLookupDate] = useState(defaultDate ?? values.departure_time.slice(0, 10) ?? "");
+  const [lookingUp, setLookingUp] = useState(false);
+  const [lookupError, setLookupError] = useState("");
+
+  async function handleLookup() {
+    if (!tripId) return;
+    setLookupError("");
+    if (!values.flight_number.trim()) {
+      setLookupError("Enter a flight number first, e.g. AA123.");
+      return;
+    }
+    if (!lookupDate) {
+      setLookupError("Pick the departure date to look up.");
+      return;
+    }
+    setLookingUp(true);
+    try {
+      const res = await fetch("/api/flights/lookup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tripId, flightNumber: values.flight_number, date: lookupDate }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setLookupError(data.error ?? "Couldn't look that flight up.");
+        return;
+      }
+      const r = data.result as {
+        airline: string;
+        flightNumber: string;
+        departureAirport: string;
+        arrivalAirport: string;
+        departureTime: string | null;
+        arrivalTime: string | null;
+      };
+      setValues((v) => ({
+        ...v,
+        airline: r.airline || v.airline,
+        flight_number: r.flightNumber || v.flight_number,
+        departure_airport: r.departureAirport || v.departure_airport,
+        arrival_airport: r.arrivalAirport || v.arrival_airport,
+        departure_time: r.departureTime ?? v.departure_time,
+        arrival_time: r.arrivalTime ?? v.arrival_time,
+      }));
+    } catch {
+      setLookupError("Couldn't reach the lookup service — try again.");
+    } finally {
+      setLookingUp(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -68,6 +123,31 @@ export function FlightForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
+      {tripId && (
+        <div className="space-y-2 rounded-2xl border border-dashed border-green/40 bg-green/5 p-3">
+          <p className="text-xs font-medium text-ink">Have your flight number? Autofill the details.</p>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+            <div>
+              <Label htmlFor="lookup-flight-number">Flight number</Label>
+              <Input
+                id="lookup-flight-number"
+                value={values.flight_number}
+                onChange={(e) => setValues((v) => ({ ...v, flight_number: e.target.value }))}
+                placeholder="AA123"
+              />
+            </div>
+            <div>
+              <Label htmlFor="lookup-date">Departure date</Label>
+              <Input id="lookup-date" type="date" value={lookupDate} onChange={(e) => setLookupDate(e.target.value)} />
+            </div>
+            <Button type="button" size="sm" variant="secondary" onClick={handleLookup} disabled={lookingUp}>
+              <Wand2 className="h-3.5 w-3.5" />
+              {lookingUp ? "Looking…" : "Autofill"}
+            </Button>
+          </div>
+          <FieldError>{lookupError}</FieldError>
+        </div>
+      )}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <Label htmlFor="flight-airline">Airline</Label>
